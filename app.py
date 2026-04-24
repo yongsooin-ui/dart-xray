@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import requests, zipfile, io, json, os
 import xml.etree.ElementTree as ET
 import dart_xray as engine
-from disclosure_analyzer import analyze_disclosure, aggregate_score
+from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, _score_label, _score_emoji
 from stock_info import get_stock_info
 app = Flask(__name__)
 CACHE_FILE = 'corp_list.json'
@@ -147,8 +147,29 @@ def collect_analysis(corp_code, display_name):
         for item in disc.get('list', []):
             nm = item['report_nm']
             analysis = analyze_disclosure(nm)
-
             rcept_no = item.get('rcept_no', '')
+
+            # CB(전환사채) 공시인 경우 자금목적 심층 분석
+            cb_analysis = None
+            if '전환사채' in nm or 'CB' in nm.upper():
+                try:
+                    cb_data = engine.get_cb_details_data(corp_code, item['rcept_dt'])
+                    if cb_data:
+                        cb_info = engine.parse_cb_purposes(cb_data)
+                        if cb_info:
+                            cb_analysis = analyze_cb_with_purposes(cb_info)
+                            # 기본 CB 점수에 자금목적 보정 반영
+                            analysis['score'] += cb_analysis['score_adjust']
+                            analysis['score'] = max(-10, min(10, analysis['score']))
+                            # 라벨·이모지 재계산
+                            analysis['score_label'] = _score_label(analysis['score'])
+                            analysis['score_emoji'] = _score_emoji(analysis['score'])
+                            # 카테고리 재결정 (강한 악재로 떨어질 수 있음)
+                            if analysis['score'] <= -4:
+                                analysis['category'] = 'bad'
+                except Exception as e:
+                    print(f"[CB 심층분석 오류] {e}")
+
             signal_data = {
                 'date': item['rcept_dt'],
                 'title': nm,
@@ -159,6 +180,7 @@ def collect_analysis(corp_code, display_name):
                 'explain': analysis['explain'],
                 'tag': '💰 호재' if analysis['category'] == 'good' else ('⚠️ 주의' if analysis['category'] == 'bad' else '📋 일반'),
                 'dart_url': f'https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}' if rcept_no else '',
+                'cb_analysis': cb_analysis,
             }
 
             if analysis['category'] in ('good', 'bad'):
@@ -221,42 +243,66 @@ def collect_analysis(corp_code, display_name):
     })
     cbs, cb_none = [], False
     if cb.get('status') == '000':
-        for item in cb.get('list', []):
-            oprt = str(item.get('oprt_fnd', '0')).strip().replace(',', '')
+        items = cb.get('list', [])
+        
+
+        for item in items:
+            # 접수번호 앞 8자 = 접수일 (YYYYMMDD → YYYY.MM.DD)
+            rcept_no = item.get('rcept_no', '')
+            date = rcept_no[:8] if len(rcept_no) >= 8 else ''
+            if len(date) == 8:
+                date = f"{date[:4]}.{date[4:6]}.{date[6:8]}"
+
+            # 숫자 깔끔하게 (억/만 단위)
+            def fmt_won(v):
+                try:
+                    s = str(v).replace(',', '').strip()
+                    if not s or s in ['-', 'N/A']:
+                        return '0'
+                    n = int(s)
+                    if n == 0: return '0'
+                    if n >= 100_000_000: return f"{n/100_000_000:.1f}억"
+                    if n >= 10_000: return f"{n/10_000:,.0f}만"
+                    return f"{n:,}"
+                except:
+                    return '0'
+
+            oprt_raw = str(item.get('fdpp_op', '0')).strip().replace(',', '')
             warn = False
             try:
-                if oprt and oprt not in ['0', '-'] and int(oprt) > 0:
+                if oprt_raw and oprt_raw not in ['0', '-'] and int(oprt_raw) > 0:
                     warn = True
             except:
                 pass
+
             cbs.append({
-                'date': item.get('rcept_dt', ''),
-                'amount': item.get('chrtc_bnd_prncpl', '-'),
-                'facil': item.get('facil_fnd', '-'),
-                'oprt': oprt,
+                'date': date,
+                'amount': fmt_won(item.get('bd_fta', '0')),
+                'facil': fmt_won(item.get('fdpp_fclt', '0')),
+                'oprt': fmt_won(oprt_raw),
                 'warn': warn,
             })
         if not cbs:
             cb_none = True
-    elif cb.get('status') == '013':
-        cb_none = True
+        elif cb.get('status') == '013':
+            cb_none = True
 
-# 종합 점수 계산
-    all_signals = signals_good + signals_bad + signals_neutral
-    summary = aggregate_score(all_signals)
+    # 종합 점수 계산
+        all_signals = signals_good + signals_bad + signals_neutral
+        summary = aggregate_score(all_signals)
 
-    return {
-        'company': display_name,
-        'signals': signals,
-        'signals_good': signals_good,
-        'signals_bad': signals_bad,
-        'signals_neutral': signals_neutral,
-        'summary': summary,
-        'dividends': dividends,
-        'executives': executives,
-        'cbs': cbs,
-        'cb_none': cb_none,
-    }
+        return {
+            'company': display_name,
+            'signals': signals,
+            'signals_good': signals_good,
+            'signals_bad': signals_bad,
+            'signals_neutral': signals_neutral,
+            'summary': summary,
+            'dividends': dividends,
+            'executives': executives,
+            'cbs': cbs,
+            'cb_none': cb_none,
+        }
 
 
 @app.route('/')

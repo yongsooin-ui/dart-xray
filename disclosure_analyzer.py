@@ -461,6 +461,101 @@ def _aggregate_label(score, bad_ct, good_ct):
         return '주의', '😟', '부정적 공시가 누적되고 있습니다. 내부 요인을 꼼꼼히 점검해야 합니다.'
     return '경고', '🚨', '악재 공시가 뚜렷하게 쌓여 있습니다. 보유 여부를 신중히 판단해야 합니다.'
 
+def analyze_cb_with_purposes(cb_info):
+    """
+    CB 자금목적 데이터를 기반으로 점수 보정 + 경고 메시지 생성.
+
+    Args:
+        cb_info: dart_xray.parse_cb_purposes()의 반환값
+
+    Returns:
+        dict: {
+            'score_adjust': 점수 보정치 (음수),
+            'warnings': [경고 메시지 리스트],
+            'flags': 주요 플래그,
+            'summary': 한 줄 요약,
+        }
+    """
+    if not cb_info:
+        return None
+
+    adjust = 0
+    warnings = []
+    flags = []
+
+    op_ratio = cb_info['operating_ratio']
+    debt_ratio = cb_info['debt_repay_ratio']
+    fclt_ratio = cb_info['facility_ratio']
+    dilution = cb_info['dilution_ratio']
+    total_eok = cb_info['total_eok']
+
+    # 1) 운영자금 비중
+    if op_ratio > 70:
+        adjust -= 5
+        warnings.append(
+            f"🚨 운영자금 비중 {op_ratio:.0f}% ({total_eok:.0f}억 중 "
+            f"{total_eok * op_ratio / 100:.0f}억) — 재무 위기 신호"
+        )
+        flags.append('critical_operating')
+    elif op_ratio > 40:
+        adjust -= 3
+        warnings.append(f"⚠️ 운영자금 비중 {op_ratio:.0f}% — 자금난 우려")
+        flags.append('high_operating')
+    elif op_ratio > 20:
+        adjust -= 1
+        warnings.append(f"운영자금 비중 {op_ratio:.0f}%")
+
+    # 2) 채무상환자금 비중
+    if debt_ratio > 50:
+        adjust -= 3
+        warnings.append(
+            f"🚨 채무상환자금 비중 {debt_ratio:.0f}% — 빚 돌려막기 패턴"
+        )
+        flags.append('debt_rollover')
+    elif debt_ratio > 20:
+        adjust -= 1
+        warnings.append(f"⚠️ 채무상환자금 비중 {debt_ratio:.0f}%")
+
+    # 3) 시설자금 비중 (호재 완화)
+    if fclt_ratio > 70:
+        adjust += 2
+        warnings.append(f"💡 시설자금 비중 {fclt_ratio:.0f}% — 성장 투자 성격")
+        flags.append('growth_capex')
+    elif fclt_ratio > 40:
+        adjust += 1
+
+    # 4) 희석률 분석
+    if dilution > 20:
+        adjust -= 3
+        warnings.append(f"🚨 전환 시 기존 주식의 {dilution:.1f}% 희석 — 심각")
+        flags.append('severe_dilution')
+    elif dilution > 10:
+        adjust -= 2
+        warnings.append(f"⚠️ 전환 시 기존 주식의 {dilution:.1f}% 희석")
+        flags.append('high_dilution')
+    elif dilution > 5:
+        adjust -= 1
+        warnings.append(f"전환 시 기존 주식의 {dilution:.1f}% 희석")
+
+    # 5) 요약 문장
+    primary = cb_info['primary_purpose']
+    if op_ratio > 70:
+        summary = "⚠️ 운영자금 목적 CB — 재무 상태 위험 신호"
+    elif debt_ratio > 50:
+        summary = "⚠️ 채무상환 목적 CB — 빚 돌려막기 우려"
+    elif fclt_ratio > 70:
+        summary = "시설투자 목적 CB — 성장 투자 성격"
+    else:
+        summary = f"주요 용도: {primary}"
+
+    return {
+        'score_adjust': adjust,
+        'warnings': warnings,
+        'flags': flags,
+        'summary': summary,
+        'purposes_detail': cb_info['ratios'],
+    }
+
 if __name__ == '__main__':
     test_cases = [
         "주요사항보고서(자기주식소각결정)",
