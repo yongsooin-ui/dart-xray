@@ -244,7 +244,6 @@ def collect_analysis(corp_code, display_name):
     cbs, cb_none = [], False
     if cb.get('status') == '000':
         items = cb.get('list', [])
-        
 
         for item in items:
             # 접수번호 앞 8자 = 접수일 (YYYYMMDD → YYYY.MM.DD)
@@ -284,25 +283,25 @@ def collect_analysis(corp_code, display_name):
             })
         if not cbs:
             cb_none = True
-        elif cb.get('status') == '013':
-            cb_none = True
+    elif cb.get('status') == '013':
+        cb_none = True
 
     # 종합 점수 계산
-        all_signals = signals_good + signals_bad + signals_neutral
-        summary = aggregate_score(all_signals)
+    all_signals = signals_good + signals_bad + signals_neutral
+    summary = aggregate_score(all_signals)
 
-        return {
-            'company': display_name,
-            'signals': signals,
-            'signals_good': signals_good,
-            'signals_bad': signals_bad,
-            'signals_neutral': signals_neutral,
-            'summary': summary,
-            'dividends': dividends,
-            'executives': executives,
-            'cbs': cbs,
-            'cb_none': cb_none,
-        }
+    return {
+        'company': display_name,
+        'signals': signals,
+        'signals_good': signals_good,
+        'signals_bad': signals_bad,
+        'signals_neutral': signals_neutral,
+        'summary': summary,
+        'dividends': dividends,
+        'executives': executives,
+        'cbs': cbs,
+        'cb_none': cb_none,
+    }
 
 
 @app.route('/')
