@@ -53,10 +53,19 @@ def get_stock_info(stock_code, corp_code=None):
 
 
 def _fetch_yfinance(stock_code, suffix, market):
-    """yfinance에서 가격·거래량 정보 조회."""
+    """yfinance에서 가격·거래량 정보 조회 (User-Agent 헤더로 봇 차단 우회 시도)."""
     ticker_symbol = f"{stock_code}{suffix}"
     try:
-        ticker = yf.Ticker(ticker_symbol)
+        # User-Agent 헤더 설정 (브라우저처럼 가장)
+        import requests
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/120.0.0.0 Safari/537.36',
+        })
+
+        ticker = yf.Ticker(ticker_symbol, session=session)
         info = ticker.info
 
         price = info.get('regularMarketPrice') or info.get('currentPrice')
