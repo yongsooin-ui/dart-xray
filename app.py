@@ -363,7 +363,7 @@ def analyze():
         })
 
     # 주가 정보 조회 (실패해도 분석은 계속 진행)
-    stock = get_stock_info(stock_code) if stock_code else None
+    stock = get_stock_info(stock_code, corp_code=corp_code) if stock_code else None
 
     result = collect_analysis(corp_code, display_name, stock=stock)
     result['stock'] = stock

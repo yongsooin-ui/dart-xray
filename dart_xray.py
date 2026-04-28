@@ -432,6 +432,72 @@ def parse_treasury_data(treasury_data, action='disposal'):
         'period_end': period_end,
         'action': action,
     }
+def get_share_count(corp_code, year='2024', reprt='11011'):
+    """
+    DART에서 발행주식 총수를 조회합니다.
+    시가총액 계산용 (yfinance 시총 데이터가 불안정한 경우 대체).
 
+    Args:
+        corp_code: 8자리 기업 고유번호
+        year: 사업연도 (기본 2024)
+        reprt: 보고서 코드 (11011=사업보고서, 11013=1분기, 11012=반기, 11014=3분기)
+
+    Returns:
+        dict or None: {
+            'total_shares': 발행주식 총수 (보통주),
+            'treasury_shares': 자기주식 수,
+            'circulating_shares': 유통주식수,
+            'report_date': 기준일 (YYYY-MM-DD),
+        }
+    """
+    try:
+        data = _get('stkrtbskDecsn.json' if False else 'stockTotqySttus.json', {
+            'corp_code': corp_code,
+            'bsns_year': year,
+            'reprt_code': reprt,
+        })
+
+        if data.get('status') != '000':
+            return None
+
+        items = data.get('list', [])
+        if not items:
+            return None
+
+        # 보통주 항목 찾기
+        common_stock = None
+        for item in items:
+            se = item.get('se', '')
+            if '보통주' in se:
+                common_stock = item
+                break
+
+        if not common_stock:
+            return None
+
+        def to_int(v):
+            if not v or v == '-':
+                return 0
+            try:
+                return int(str(v).replace(',', ''))
+            except (ValueError, TypeError):
+                return 0
+
+        total = to_int(common_stock.get('istc_totqy'))
+        treasury = to_int(common_stock.get('tesstk_co'))
+        circulating = to_int(common_stock.get('distb_stock_co'))
+
+        if total == 0:
+            return None
+
+        return {
+            'total_shares': total,
+            'treasury_shares': treasury,
+            'circulating_shares': circulating,
+            'report_date': common_stock.get('stlm_dt', ''),
+        }
+    except Exception as e:
+        print(f"[발행주식수 조회 오류] {e}")
+        return None
 if __name__ == "__main__":
     run_xray('삼성전자')
