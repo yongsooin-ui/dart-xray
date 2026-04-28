@@ -555,7 +555,129 @@ def analyze_cb_with_purposes(cb_info):
         'summary': summary,
         'purposes_detail': cb_info['ratios'],
     }
+def analyze_treasury_with_market_cap(treasury_info, market_cap):
+    """
+    자사주 (처분/취득/소각) 데이터를 시가총액 대비 비율로 점수 보정.
 
+    점수 구간:
+    - 처분: <0.1% → 0점 / 0.1~0.5% → 0점 / 0.5~2% → -1점 / 2~5% → -2점 / >5% → -3점
+    - 취득: <0.1% → +1점 / 0.1~0.5% → +2점 / 0.5~2% → +4점 / 2~5% → +6점 / >5% → +8점
+    - 소각: 취득과 동일
+
+    Args:
+        treasury_info: dart_xray.parse_treasury_data() 반환값
+        market_cap: 시가총액 (원 단위, stock_info.get_stock_info()의 market_cap)
+
+    Returns:
+        dict: {
+            'final_score': 시총 대비로 재조정된 절대 점수,
+            'mcap_ratio': 시총 대비 비율 (%),
+            'warnings': [메시지 리스트],
+            'summary': 한 줄 요약,
+            'tier': 규모 구간 ('무의미' / '소규모' / '중간' / '큰규모' / '대형'),
+            'amount_eok': 처분/취득 금액 (억),
+            'purpose': 목적/사유,
+        }
+    """
+    if not treasury_info or not market_cap or market_cap <= 0:
+        return None
+
+    total_amount = treasury_info['total_amount']
+    action = treasury_info['action']  # 'disposal' or 'acquisition'
+
+    # 시총 대비 비율 (%)
+    mcap_ratio = (total_amount / market_cap) * 100
+
+    # 점수 구간 결정
+    if mcap_ratio < 0.1:
+        tier = '무의미'
+        if action == 'disposal':
+            final_score = 0
+            tier_desc = '시총 대비 0.1% 미만 — 임직원 보상 등 운영 차원'
+        else:  # acquisition / cremation
+            final_score = 1
+            tier_desc = '시총 대비 0.1% 미만 — 상징적 규모'
+    elif mcap_ratio < 0.5:
+        tier = '소규모'
+        if action == 'disposal':
+            final_score = 0
+            tier_desc = '시총 대비 0.5% 미만 — 일반적인 임직원 RSU 수준'
+        else:
+            final_score = 2
+            tier_desc = '시총 대비 0.5% 미만 — 소규모 주주환원'
+    elif mcap_ratio < 2.0:
+        tier = '중간'
+        if action == 'disposal':
+            final_score = -1
+            tier_desc = '시총 대비 0.5~2% — 의미있는 규모의 처분'
+        else:
+            final_score = 4
+            tier_desc = '시총 대비 0.5~2% — 의미있는 주주환원'
+    elif mcap_ratio < 5.0:
+        tier = '큰규모'
+        if action == 'disposal':
+            final_score = -2
+            tier_desc = '시총 대비 2~5% — 큰 규모 처분, 수급 부담'
+        else:
+            final_score = 6
+            tier_desc = '시총 대비 2~5% — 큰 규모 주주환원'
+    else:
+        tier = '대형'
+        if action == 'disposal':
+            final_score = -3
+            tier_desc = '시총 대비 5%+ — 대형 처분, 주주가치 희석 우려'
+        else:
+            final_score = 8
+            tier_desc = '시총 대비 5%+ — 대형 주주환원, 강력한 호재'
+
+    # 경고 메시지 구성
+    warnings = []
+    amount_eok = treasury_info['total_eok']
+    purpose = treasury_info.get('purpose', '').strip()
+
+    warnings.append(
+        f"📊 처분 규모: {amount_eok:,.1f}억 (시총 대비 {mcap_ratio:.3f}%)"
+        if action == 'disposal'
+        else f"📊 취득 규모: {amount_eok:,.1f}억 (시총 대비 {mcap_ratio:.3f}%)"
+    )
+    warnings.append(f"💡 {tier_desc}")
+
+    if purpose and purpose != '명시되지 않음':
+        # 목적 텍스트는 길 수 있으니 100자로 자름
+        purpose_short = purpose[:80] + '…' if len(purpose) > 80 else purpose
+        warnings.append(f"📝 사유: {purpose_short}")
+
+    # 임직원 RSU/상여 키워드 자동 감지 (점수에는 이미 반영됨, 사용자 설명용)
+    rsu_keywords = ['임직원', '상여', '성과', 'RSU', '인센티브', '보상', '스톡옵션']
+    if action == 'disposal' and any(kw in purpose for kw in rsu_keywords):
+        warnings.append("ℹ️ 임직원 보상 목적으로 보입니다 (악재 강도 완화 적용)")
+
+    # 한 줄 요약
+    if action == 'disposal':
+        if mcap_ratio < 0.5:
+            summary = f"미미한 규모의 처분 ({mcap_ratio:.2f}%) — 점수 영향 없음"
+        elif mcap_ratio < 2.0:
+            summary = f"중간 규모 처분 ({mcap_ratio:.2f}%) — 약한 악재"
+        else:
+            summary = f"⚠️ 큰 규모 처분 ({mcap_ratio:.2f}%) — 주주가치 희석 가능성"
+    else:
+        if mcap_ratio < 0.5:
+            summary = f"소규모 취득/소각 ({mcap_ratio:.2f}%)"
+        elif mcap_ratio < 2.0:
+            summary = f"의미있는 주주환원 ({mcap_ratio:.2f}%)"
+        else:
+            summary = f"💎 대형 주주환원 ({mcap_ratio:.2f}%) — 강력한 호재"
+
+    return {
+        'final_score': final_score,
+        'mcap_ratio': round(mcap_ratio, 3),
+        'warnings': warnings,
+        'summary': summary,
+        'tier': tier,
+        'amount_eok': amount_eok,
+        'purpose': purpose,
+        'action': action,
+    }
 if __name__ == '__main__':
     test_cases = [
         "주요사항보고서(자기주식소각결정)",

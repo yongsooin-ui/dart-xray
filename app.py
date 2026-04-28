@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import requests, zipfile, io, json, os
 import xml.etree.ElementTree as ET
 import dart_xray as engine
-from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, _score_label, _score_emoji
+from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, analyze_treasury_with_market_cap, _score_label, _score_emoji
 from stock_info import get_stock_info
 app = Flask(__name__)
 CACHE_FILE = 'corp_list.json'
@@ -131,7 +131,7 @@ def resolve_corp_code(query):
     return None, None, None
 
 
-def collect_analysis(corp_code, display_name):
+def collect_analysis(corp_code, display_name, stock=None):
     today = datetime.now()
     start = today - timedelta(days=30)
 
@@ -170,6 +170,39 @@ def collect_analysis(corp_code, display_name):
                 except Exception as e:
                     print(f"[CB 심층분석 오류] {e}")
 
+            # 자사주 (처분/취득) 공시인 경우 시총 대비 분석
+            treasury_analysis = None
+            is_disposal = '자기주식처분' in nm or '자사주처분' in nm
+            is_acquisition = '자기주식취득' in nm or '자사주취득' in nm
+
+            if (is_disposal or is_acquisition) and stock and stock.get('market_cap_eok'):
+                try:
+                    if is_disposal:
+                        t_data = engine.get_treasury_disposal_data(corp_code, item['rcept_dt'])
+                        t_info = engine.parse_treasury_data(t_data, action='disposal') if t_data else None
+                    else:
+                        t_data = engine.get_treasury_acquisition_data(corp_code, item['rcept_dt'])
+                        t_info = engine.parse_treasury_data(t_data, action='acquisition') if t_data else None
+
+                    if t_info:
+                        treasury_analysis = analyze_treasury_with_market_cap(
+                            t_info, stock['market_cap_eok'] * 100_000_000
+                        )
+                        if treasury_analysis:
+                            # 기본 점수를 시총 대비로 재조정된 점수로 교체
+                            analysis['score'] = treasury_analysis['final_score']
+                            analysis['score_label'] = _score_label(analysis['score'])
+                            analysis['score_emoji'] = _score_emoji(analysis['score'])
+                            # 카테고리 재결정
+                            if analysis['score'] >= 1:
+                                analysis['category'] = 'good'
+                            elif analysis['score'] <= -1:
+                                analysis['category'] = 'bad'
+                            else:
+                                analysis['category'] = 'neutral'
+                except Exception as e:
+                    print(f"[자사주 시총분석 오류] {e}")
+
             signal_data = {
                 'date': item['rcept_dt'],
                 'title': nm,
@@ -181,6 +214,7 @@ def collect_analysis(corp_code, display_name):
                 'tag': '💰 호재' if analysis['category'] == 'good' else ('⚠️ 주의' if analysis['category'] == 'bad' else '📋 일반'),
                 'dart_url': f'https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}' if rcept_no else '',
                 'cb_analysis': cb_analysis,
+                'treasury_analysis': treasury_analysis,
             }
 
             if analysis['category'] in ('good', 'bad'):
@@ -328,10 +362,10 @@ def analyze():
             'error': f"'{query}'에 해당하는 상장기업을 찾을 수 없습니다."
         })
 
-    # Yahoo Finance에서 주가 정보 조회 (실패해도 분석은 계속 진행)
+    # 주가 정보 조회 (실패해도 분석은 계속 진행)
     stock = get_stock_info(stock_code) if stock_code else None
 
-    result = collect_analysis(corp_code, display_name)
+    result = collect_analysis(corp_code, display_name, stock=stock)
     result['stock'] = stock
     result['stock_code'] = stock_code
 

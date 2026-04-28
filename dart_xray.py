@@ -208,5 +208,230 @@ def run_xray(company_name):
     print("=" * 70)
 
 
+# ==========================================
+# 웹앱용 CB 상세 조회 & 자금목적 분석 함수
+# (analyze_cb_history와 달리 값을 반환함)
+# ==========================================
+
+def get_cb_details_data(corp_code, around_date, days_buffer=15):
+    """
+    특정 기업의 CB(전환사채) 상세 정보를 조회합니다.
+
+    Args:
+        corp_code: 8자리 기업 고유번호
+        around_date: 공시 접수일 (YYYYMMDD 문자열)
+        days_buffer: 접수일 기준 앞뒤 며칠 범위로 조회할지
+
+    Returns:
+        dict or None: CB 상세 정보 (없으면 None)
+    """
+    try:
+        d = datetime.strptime(around_date, '%Y%m%d')
+        bgn = (d - timedelta(days=days_buffer)).strftime('%Y%m%d')
+        end = (d + timedelta(days=days_buffer)).strftime('%Y%m%d')
+
+        data = _get('cvbdIsDecsn.json', {
+            'corp_code': corp_code,
+            'bgn_de': bgn,
+            'end_de': end,
+        })
+
+        if data.get('status') == '000' and data.get('list'):
+            return data['list'][0]  # 가장 최근 것
+        return None
+    except Exception as e:
+        print(f"[CB API 오류] {e}")
+        return None
+
+
+def parse_cb_purposes(cb_data):
+    """
+    CB 상세 정보에서 자금목적을 추출·분석합니다.
+
+    Returns:
+        dict: {
+            'total_eok': 총액(억),
+            'purposes': {'시설자금': 금액, ...},
+            'ratios': {'시설자금': 비율%, ...},
+            'primary_purpose': 가장 비중 큰 목적,
+            'operating_ratio': 운영자금 비중(%),
+            'debt_repay_ratio': 채무상환 비중(%),
+            'facility_ratio': 시설자금 비중(%),
+            'dilution_ratio': 주식총수 대비 희석률(%),
+            'interest_face': 표면이자율,
+            'interest_mature': 만기이자율,
+        }
+    """
+    if not cb_data:
+        return None
+
+    def to_int(val):
+        if not val or val == '-':
+            return 0
+        try:
+            return int(str(val).replace(',', ''))
+        except (ValueError, TypeError):
+            return 0
+
+    purposes = {
+        '시설자금': to_int(cb_data.get('fdpp_fclt')),
+        '영업양수자금': to_int(cb_data.get('fdpp_bsninh')),
+        '운영자금': to_int(cb_data.get('fdpp_op')),
+        '채무상환자금': to_int(cb_data.get('fdpp_dtrp')),
+        '타법인증권취득': to_int(cb_data.get('fdpp_ocsa')),
+        '기타자금': to_int(cb_data.get('fdpp_etc')),
+    }
+
+    total = sum(purposes.values())
+    if total == 0:
+        return None  # 데이터 이상
+
+    ratios = {k: round(v / total * 100, 1) for k, v in purposes.items()}
+    primary = max(purposes.items(), key=lambda x: x[1])[0]
+
+    # 희석률 (주식총수 대비 전환 비율)
+    dilution_str = cb_data.get('cvisstk_tisstk_vs', '0')
+    try:
+        dilution = float(str(dilution_str).replace(',', '').replace('%', ''))
+    except (ValueError, TypeError):
+        dilution = 0.0
+
+    return {
+        'total': total,
+        'total_eok': round(total / 100_000_000, 1),
+        'purposes': purposes,
+        'ratios': ratios,
+        'primary_purpose': primary,
+        'operating_ratio': ratios['운영자금'],
+        'debt_repay_ratio': ratios['채무상환자금'],
+        'facility_ratio': ratios['시설자금'],
+        'dilution_ratio': dilution,
+        'interest_face': cb_data.get('bd_intr_ex', ''),
+        'interest_mature': cb_data.get('bd_intr_sf', ''),
+    }
+
+# ==========================================
+# 웹앱용 자사주 (처분/취득) 상세 조회 & 시총 대비 분석
+# ==========================================
+
+def get_treasury_disposal_data(corp_code, around_date, days_buffer=15):
+    """
+    자기주식 처분결정 상세 정보 조회.
+
+    Args:
+        corp_code: 8자리 기업 고유번호
+        around_date: 공시 접수일 (YYYYMMDD 문자열)
+        days_buffer: 접수일 기준 앞뒤 며칠 범위로 조회
+
+    Returns:
+        dict or None: 처분 상세 정보
+    """
+    try:
+        d = datetime.strptime(around_date, '%Y%m%d')
+        bgn = (d - timedelta(days=days_buffer)).strftime('%Y%m%d')
+        end = (d + timedelta(days=days_buffer)).strftime('%Y%m%d')
+
+        data = _get('tsstkDpDecsn.json', {
+            'corp_code': corp_code,
+            'bgn_de': bgn,
+            'end_de': end,
+        })
+
+        if data.get('status') == '000' and data.get('list'):
+            return data['list'][0]
+        return None
+    except Exception as e:
+        print(f"[자사주 처분 API 오류] {e}")
+        return None
+
+
+def get_treasury_acquisition_data(corp_code, around_date, days_buffer=15):
+    """
+    자기주식 취득결정 상세 정보 조회.
+
+    Returns:
+        dict or None: 취득 상세 정보
+    """
+    try:
+        d = datetime.strptime(around_date, '%Y%m%d')
+        bgn = (d - timedelta(days=days_buffer)).strftime('%Y%m%d')
+        end = (d + timedelta(days=days_buffer)).strftime('%Y%m%d')
+
+        data = _get('tsstkAqDecsn.json', {
+            'corp_code': corp_code,
+            'bgn_de': bgn,
+            'end_de': end,
+        })
+
+        if data.get('status') == '000' and data.get('list'):
+            return data['list'][0]
+        return None
+    except Exception as e:
+        print(f"[자사주 취득 API 오류] {e}")
+        return None
+
+
+def parse_treasury_data(treasury_data, action='disposal'):
+    """
+    자사주 공시 데이터에서 핵심 정보 추출.
+
+    Args:
+        treasury_data: get_treasury_disposal_data / get_treasury_acquisition_data 반환값
+        action: 'disposal'(처분) 또는 'acquisition'(취득)
+
+    Returns:
+        dict: {
+            'shares': 대상 주식 수,
+            'price_per_share': 주당 단가,
+            'total_amount': 총액(원),
+            'total_eok': 총액(억원),
+            'purpose': 목적/사유 텍스트,
+            'period_start': 시작일,
+            'period_end': 종료일,
+            'action': 'disposal' 또는 'acquisition',
+        }
+    """
+    if not treasury_data:
+        return None
+
+    def to_int(val):
+        if not val or val == '-':
+            return 0
+        try:
+            return int(str(val).replace(',', ''))
+        except (ValueError, TypeError):
+            return 0
+
+    if action == 'disposal':
+        # 자사주 처분 필드
+        shares = to_int(treasury_data.get('dppln_stk_ostk'))
+        price_per_share = to_int(treasury_data.get('dpstk_prc_ostk'))
+        total_amount = to_int(treasury_data.get('dppln_prc_ostk'))
+        purpose = treasury_data.get('dp_pp', '').strip() or '명시되지 않음'
+        period_start = treasury_data.get('dpprpd_bgd', '')
+        period_end = treasury_data.get('dpprpd_edd', '')
+    else:
+        # 자사주 취득 필드 (취득은 보통 aqpln_stk_ostk, aqpln_prc_ostk 같은 패턴)
+        shares = to_int(treasury_data.get('aqpln_stk_ostk'))
+        price_per_share = to_int(treasury_data.get('aqstk_prc_ostk'))
+        total_amount = to_int(treasury_data.get('aqpln_prc_ostk'))
+        purpose = treasury_data.get('aq_pp', '').strip() or '명시되지 않음'
+        period_start = treasury_data.get('aqprpd_bgd', '')
+        period_end = treasury_data.get('aqprpd_edd', '')
+
+    if total_amount == 0:
+        return None
+
+    return {
+        'shares': shares,
+        'price_per_share': price_per_share,
+        'total_amount': total_amount,
+        'total_eok': round(total_amount / 100_000_000, 1),
+        'purpose': purpose,
+        'period_start': period_start,
+        'period_end': period_end,
+        'action': action,
+    }
+
 if __name__ == "__main__":
     run_xray('삼성전자')

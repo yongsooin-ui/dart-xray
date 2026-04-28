@@ -206,12 +206,12 @@
             overflow: hidden;
             margin-bottom: 8px;
         }
-        .bar-fclt { background: #4ade80; }       /* 시설자금: 초록 (호재) */
-        .bar-op { background: #f87171; }          /* 운영자금: 빨강 (악재) */
-        .bar-debt { background: #dc2626; }        /* 채무상환: 진빨강 */
-        .bar-other-stk { background: #60a5fa; }   /* 타법인취득: 파랑 */
-        .bar-biz-acq { background: #a78bfa; }     /* 영업양수: 보라 */
-        .bar-etc { background: #6b7280; }         /* 기타: 회색 */
+        .bar-fclt { background: #4ade80; }
+        .bar-op { background: #f87171; }
+        .bar-debt { background: #dc2626; }
+        .bar-other-stk { background: #60a5fa; }
+        .bar-biz-acq { background: #a78bfa; }
+        .bar-etc { background: #6b7280; }
 
         .cb-ratio-legend {
             display: flex;
@@ -243,6 +243,62 @@
         .dot-biz-acq { background: #a78bfa; }
         .dot-etc { background: #6b7280; }
 
+        /* ===== 자사주 시총 대비 분석 박스 ===== */
+        .treasury-analysis {
+            margin-top: 14px;
+            padding: 14px 16px;
+            background: #1a1f2e;
+            border-left: 3px solid #60a5fa;
+            border-radius: 8px;
+        }
+        .treasury-analysis.acquisition { border-left-color: #4ade80; }
+        .treasury-analysis.disposal { border-left-color: #fbbf24; }
+
+        .treasury-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .treasury-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #93c5fd;
+        }
+        .treasury-summary {
+            font-size: 12px;
+            color: #d1d5db;
+            font-weight: 500;
+        }
+        .treasury-warnings {
+            margin: 10px 0 8px 0;
+            padding-left: 18px;
+            list-style: none;
+        }
+        .treasury-warnings li {
+            font-size: 13px;
+            color: #e5e7eb;
+            line-height: 1.6;
+            margin-bottom: 4px;
+            position: relative;
+        }
+        .treasury-warnings li::before {
+            content: '▸';
+            position: absolute;
+            left: -14px;
+            color: #6b7280;
+        }
+        .treasury-tier-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #1e3a5f;
+            color: #93c5fd;
+        }
         /* 모바일 최적화 */
         @media (max-width: 600px) {
             .cb-analysis { padding: 12px; }
@@ -294,7 +350,7 @@
             background: #7f1d1d; color: #fecaca;
             padding: 16px; border-radius: 8px;
         }
-/* ===== 주가 헤더 ===== */
+        /* ===== 주가 헤더 ===== */
         .stock-header { padding: 24px 28px; }
         .stock-top {
             display: flex; justify-content: space-between;
@@ -358,7 +414,7 @@
             font-size: 11px; color: #6b7280;
             margin-top: 8px; text-align: right;
         }
-/* ===== 공시 종합 점수 카드 ===== */
+        /* ===== 공시 종합 점수 카드 ===== */
         .summary-card {
             padding: 24px 28px;
             border-left: 4px solid #374151;
@@ -422,9 +478,7 @@
         .breakdown-neutral { color: #9ca3af; font-weight: 600; }
         .breakdown-good { color: #4ade80; font-weight: 600; }
         .breakdown-total { color: #6b7280; }
-        /* ==========================================
-           모바일 최적화 (600px 이하)
-           ========================================== */
+
         @media (max-width: 600px) {
             body { padding: 20px 12px; }
             header h1 { font-size: 28px; }
@@ -432,66 +486,35 @@
             form { flex-direction: column; }
             button { width: 100%; }
 
-            /* 주가 헤더 */
             .stock-header { padding: 20px 18px; }
-            .stock-top {
-                flex-direction: column;
-                gap: 12px;
-                margin-bottom: 14px;
-            }
+            .stock-top { flex-direction: column; gap: 12px; margin-bottom: 14px; }
             .stock-name { font-size: 22px; }
             .stock-meta { font-size: 12px; }
-            .stock-price-block {
-                text-align: left;
-                width: 100%;
-            }
+            .stock-price-block { text-align: left; width: 100%; }
             .stock-price { font-size: 26px; }
             .stock-change { margin-top: 4px; }
             .stock-stats { gap: 16px; }
             .stat-mini-value { font-size: 14px; }
 
-            /* 종합 점수 카드 */
             .summary-card { padding: 20px 18px; }
-            .summary-body {
-                flex-direction: column;
-                gap: 16px;
-                align-items: stretch;
-            }
-            .summary-main {
-                align-self: center;
-                width: 140px;
-                padding: 10px 12px;
-            }
+            .summary-body { flex-direction: column; gap: 16px; align-items: stretch; }
+            .summary-main { align-self: center; width: 140px; padding: 10px 12px; }
             .summary-emoji { font-size: 36px; }
             .summary-score { font-size: 24px; }
             .summary-label { font-size: 12px; }
             .summary-description { font-size: 13px; }
 
-            /* 공시 카드 */
             .hero { padding: 20px 18px; }
             .hero h2 { font-size: 19px; }
             .hero-sub { font-size: 12px; }
             .tab-btn { font-size: 12px; padding: 8px 6px; }
             .tab-count { padding: 1px 6px; font-size: 11px; }
 
-            /* ⭐ 공시 카드: 이모지+점수 박스를 가로로 예쁘게 */
             .sig-card { padding: 14px; }
-            .sig-header {
-                flex-direction: row;
-                align-items: center;
-                gap: 10px;
-                margin-bottom: 10px;
-            }
-            .sig-meta {
-                flex: 1;
-                min-width: 0; /* flex 아이템이 넘치지 않게 */
-            }
+            .sig-header { flex-direction: row; align-items: center; gap: 10px; margin-bottom: 10px; }
+            .sig-meta { flex: 1; min-width: 0; }
             .sig-rule { font-size: 14px; }
-            .sig-score-box {
-                align-self: center;
-                min-width: 72px;
-                padding: 8px 10px;
-            }
+            .sig-score-box { align-self: center; min-width: 72px; padding: 8px 10px; }
             .sig-score-emoji { font-size: 24px; margin-bottom: 2px; }
             .sig-score-label { font-size: 10px; font-weight: 600; }
             .sig-score-num { font-size: 9px; }
@@ -500,29 +523,13 @@
             .sig-explain { font-size: 13px; line-height: 1.55; }
             .sig-dart-link { font-size: 12px; padding: 6px 10px; }
 
-            /* 다른 카드들 */
             .card { padding: 18px 16px; }
             .card h2 { font-size: 17px; }
             .exec-pay { font-size: 16px; }
-            /* 긴 문장 있는 경고·해설 박스들 */
-            .warning-note {
-                font-size: 12px;
-                padding: 10px 12px;
-                line-height: 1.5;
-            }
-            .empty {
-                font-size: 13px;
-                padding: 6px 0;
-            }
-            .summary-description {
-                font-size: 12.5px;
-                line-height: 1.55;
-            }
-            /* 공시 설명도 조금 타이트하게 */
-            .sig-explain {
-                font-size: 13px;
-                line-height: 1.55;
-            }
+            .warning-note { font-size: 12px; padding: 10px 12px; line-height: 1.5; }
+            .empty { font-size: 13px; padding: 6px 0; }
+            .summary-description { font-size: 12.5px; line-height: 1.55; }
+            .sig-explain { font-size: 13px; line-height: 1.55; }
         }
     </style>
 </head>
@@ -548,7 +555,6 @@
                 <div class="error">{{ result.error }}</div>
             {% else %}
 
-<!-- ===== 주가 헤더 ===== -->
                 {% if result.stock %}
                 <div class="card stock-header">
                     <div class="stock-top">
@@ -589,7 +595,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="stock-footnote">Yahoo Finance · 약 15분 지연</div>
+                    <div class="stock-footnote">한국거래소(KRX) · 전일 종가 기준</div>
                 </div>
                 {% elif result.stock_code %}
                 <div class="card stock-header">
@@ -603,7 +609,6 @@
                 </div>
                 {% endif %}
 
-<!-- ===== 공시 종합 점수 ===== -->
                 {% if result.summary and result.summary.count > 0 %}
                 <div class="card summary-card summary-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
                     <div class="summary-title">📊 최근 30일 공시 종합</div>
@@ -631,7 +636,6 @@
                 </div>
                 {% endif %}
 
-            <!-- ===== 공시 히어로 ===== -->
                 <div class="card hero">
                     <h2>📰 {{ result.company }} · 최근 30일 공시</h2>
                     <p class="hero-sub">공시 제목을 해석해 왜 호재/악재인지 설명해드립니다.</p>
@@ -665,6 +669,7 @@
                                     </div>
                                     <div class="sig-title">{{ s.title }}</div>
                                     <div class="sig-explain">💡 {{ s.explain }}</div>
+
                                     {% if s.cb_analysis %}
                                         <div class="cb-analysis">
                                             <div class="cb-header">
@@ -681,48 +686,42 @@
                                             <div class="cb-ratios">
                                                 <div class="cb-ratio-label">자금 구성</div>
                                                 <div class="cb-ratio-bar">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}
-                                                        <div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%" title="시설자금 {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}
-                                                        <div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%" title="운영자금 {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}
-                                                        <div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%" title="채무상환자금 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}
-                                                        <div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%" title="타법인증권취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}
-                                                        <div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%" title="영업양수자금 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}
-                                                        <div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%" title="기타자금 {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>
-                                                    {% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>{% endif %}
                                                 </div>
                                                 <div class="cb-ratio-legend">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}
-                                                        <span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}
-                                                        <span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}
-                                                        <span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}
-                                                        <span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}
-                                                        <span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}
-                                                        <span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>
-                                                    {% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>{% endif %}
                                                 </div>
                                             </div>
                                         </div>
                                     {% endif %}
+
+                                    {% if s.treasury_analysis %}
+                                        <div class="treasury-analysis {{ s.treasury_analysis.action }}">
+                                            <div class="treasury-header">
+                                                <span class="treasury-title">🔬 시총 대비 분석</span>
+                                                <span class="treasury-tier-badge">{{ s.treasury_analysis.tier }}</span>
+                                            </div>
+                                            <div class="treasury-summary">{{ s.treasury_analysis.summary }}</div>
+                                            {% if s.treasury_analysis.warnings %}
+                                                <ul class="treasury-warnings">
+                                                    {% for w in s.treasury_analysis.warnings %}
+                                                        <li>{{ w }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+
                                     {% if s.dart_url %}
                                         <a class="sig-dart-link" href="{{ s.dart_url }}" target="_blank" rel="noopener">
                                             📄 DART 원문 보기 →
@@ -752,6 +751,7 @@
                                     </div>
                                     <div class="sig-title">{{ s.title }}</div>
                                     <div class="sig-explain">💡 {{ s.explain }}</div>
+
                                     {% if s.cb_analysis %}
                                         <div class="cb-analysis">
                                             <div class="cb-header">
@@ -768,48 +768,42 @@
                                             <div class="cb-ratios">
                                                 <div class="cb-ratio-label">자금 구성</div>
                                                 <div class="cb-ratio-bar">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}
-                                                        <div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%" title="시설자금 {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}
-                                                        <div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%" title="운영자금 {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}
-                                                        <div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%" title="채무상환자금 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}
-                                                        <div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%" title="타법인증권취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}
-                                                        <div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%" title="영업양수자금 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}
-                                                        <div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%" title="기타자금 {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>
-                                                    {% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>{% endif %}
                                                 </div>
                                                 <div class="cb-ratio-legend">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}
-                                                        <span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}
-                                                        <span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}
-                                                        <span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}
-                                                        <span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}
-                                                        <span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}
-                                                        <span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>
-                                                    {% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>{% endif %}
                                                 </div>
                                             </div>
                                         </div>
                                     {% endif %}
+
+                                    {% if s.treasury_analysis %}
+                                        <div class="treasury-analysis {{ s.treasury_analysis.action }}">
+                                            <div class="treasury-header">
+                                                <span class="treasury-title">🔬 시총 대비 분석</span>
+                                                <span class="treasury-tier-badge">{{ s.treasury_analysis.tier }}</span>
+                                            </div>
+                                            <div class="treasury-summary">{{ s.treasury_analysis.summary }}</div>
+                                            {% if s.treasury_analysis.warnings %}
+                                                <ul class="treasury-warnings">
+                                                    {% for w in s.treasury_analysis.warnings %}
+                                                        <li>{{ w }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+
                                     {% if s.dart_url %}
                                         <a class="sig-dart-link" href="{{ s.dart_url }}" target="_blank" rel="noopener">
                                             📄 DART 원문 보기 →
@@ -839,6 +833,7 @@
                                     </div>
                                     <div class="sig-title">{{ s.title }}</div>
                                     <div class="sig-explain">💡 {{ s.explain }}</div>
+
                                     {% if s.cb_analysis %}
                                         <div class="cb-analysis">
                                             <div class="cb-header">
@@ -855,48 +850,42 @@
                                             <div class="cb-ratios">
                                                 <div class="cb-ratio-label">자금 구성</div>
                                                 <div class="cb-ratio-bar">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}
-                                                        <div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%" title="시설자금 {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}
-                                                        <div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%" title="운영자금 {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}
-                                                        <div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%" title="채무상환자금 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}
-                                                        <div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%" title="타법인증권취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}
-                                                        <div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%" title="영업양수자금 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}
-                                                        <div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%" title="기타자금 {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>
-                                                    {% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>{% endif %}
                                                 </div>
                                                 <div class="cb-ratio-legend">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}
-                                                        <span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}
-                                                        <span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}
-                                                        <span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}
-                                                        <span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}
-                                                        <span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>
-                                                    {% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}
-                                                        <span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>
-                                                    {% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>{% endif %}
+                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>{% endif %}
                                                 </div>
                                             </div>
                                         </div>
                                     {% endif %}
+
+                                    {% if s.treasury_analysis %}
+                                        <div class="treasury-analysis {{ s.treasury_analysis.action }}">
+                                            <div class="treasury-header">
+                                                <span class="treasury-title">🔬 시총 대비 분석</span>
+                                                <span class="treasury-tier-badge">{{ s.treasury_analysis.tier }}</span>
+                                            </div>
+                                            <div class="treasury-summary">{{ s.treasury_analysis.summary }}</div>
+                                            {% if s.treasury_analysis.warnings %}
+                                                <ul class="treasury-warnings">
+                                                    {% for w in s.treasury_analysis.warnings %}
+                                                        <li>{{ w }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+
                                     {% if s.dart_url %}
                                         <a class="sig-dart-link" href="{{ s.dart_url }}" target="_blank" rel="noopener">
                                             📄 DART 원문 보기 →
@@ -910,7 +899,6 @@
                     </div>
                 </div>
 
-                <!-- ===== 배당 ===== -->
                 <div class="card">
                     <h2>💰 배당 분석 (2024년 사업보고서)</h2>
                     <div class="stat">
@@ -939,7 +927,6 @@
                     </div>
                 </div>
 
-                <!-- ===== 임원 보수 ===== -->
                 <div class="card">
                     <h2>👔 임원 보수 (5억원 이상)</h2>
                     <div class="warning-note">
@@ -961,7 +948,6 @@
                     {% endif %}
                 </div>
 
-                <!-- ===== 전환사채 ===== -->
                 <div class="card">
                     <h2>📜 전환사채 이력 (최근 3년)</h2>
                     {% if result.cb_none %}
@@ -1069,7 +1055,6 @@
             }
         });
 
-        // 탭 전환
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.tab;
