@@ -3,3 +3,5 @@ requests==2.31.0
 yfinance==0.2.40
 python-dotenv==1.2.2
 gunicorn==21.2.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
