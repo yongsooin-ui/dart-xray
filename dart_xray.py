@@ -432,6 +432,8 @@ def parse_treasury_data(treasury_data, action='disposal'):
         'period_end': period_end,
         'action': action,
     }
+
+
 def get_share_count(corp_code, year='2024', reprt='11011'):
     """
     DART에서 발행주식 총수를 조회합니다.
@@ -451,7 +453,7 @@ def get_share_count(corp_code, year='2024', reprt='11011'):
         }
     """
     try:
-        data = _get('stkrtbskDecsn.json' if False else 'stockTotqySttus.json', {
+        data = _get('stockTotqySttus.json', {
             'corp_code': corp_code,
             'bsns_year': year,
             'reprt_code': reprt,
@@ -499,5 +501,36 @@ def get_share_count(corp_code, year='2024', reprt='11011'):
     except Exception as e:
         print(f"[발행주식수 조회 오류] {e}")
         return None
+
+
+# ==========================================
+# 배당 정보 조회 헬퍼 함수들 (B 전략)
+# ==========================================
+
+def get_latest_dividend_year(corp_code):
+    """
+    가장 최근에 데이터가 있는 사업연도를 자동 탐색.
+    현재 연도 → 작년 → 재작년 순으로 시도해서 처음 데이터가 나오는 연도를 반환.
+
+    Returns:
+        str or None: '2025' 같은 연도 문자열, 데이터 없으면 None
+    """
+    today = datetime.now()
+    # 현재 연도부터 4년 전까지 역순으로 시도
+    for years_back in range(0, 4):
+        year = str(today.year - years_back)
+        data = _get('alotMatter.json', {
+            'corp_code': corp_code,
+            'bsns_year': year,
+            'reprt_code': '11011',  # 사업보고서
+        })
+        if data.get('status') == '000' and data.get('list'):
+            # 보통주 배당 데이터가 실제로 있는지 확인
+            for item in data['list']:
+                if '주당 현금배당금' in item.get('se', '') and '보통주' in item.get('stock_knd', ''):
+                    if item.get('thstrm', '-') not in ['-', '', '0']:
+                        return year
+    return None
+
 if __name__ == "__main__":
     run_xray('삼성전자')

@@ -227,30 +227,61 @@ def collect_analysis(corp_code, display_name, stock=None):
             else:
                 signals_neutral.append(signal_data)
 
-    div = engine._get('alotMatter.json', {
-        'corp_code': corp_code, 'bsns_year': '2024', 'reprt_code': '11011',
-    })
-    dividends = {'per_share_now': '-', 'per_share_prev': '-',
-                 'payout_now': '-', 'payout_prev': '-', 'yoy': None}
-    if div.get('status') == '000':
-        for item in div.get('list', []):
-            cat = item.get('se', '')
-            if '주당 현금배당금' in cat and '보통주' in item.get('stock_knd', ''):
-                dividends['per_share_now'] = item.get('thstrm', '-')
-                dividends['per_share_prev'] = item.get('frmtrm', '-')
-                try:
-                    n = float(str(dividends['per_share_now']).replace(',', ''))
-                    p = float(str(dividends['per_share_prev']).replace(',', ''))
-                    if p > 0:
-                        dividends['yoy'] = round((n - p) / p * 100, 1)
-                except:
-                    pass
-            if '현금배당성향' in cat:
-                dividends['payout_now'] = item.get('thstrm', '-')
-                dividends['payout_prev'] = item.get('frmtrm', '-')
+    # ========================================
+    # 배당 분석 (개선판: 자동 연도 + 100주 수령액 + 수익률 + 최신 공시)
+    # ========================================
+    dividends = {
+        'year': '-',
+        'per_share_now': '-',      # 당기 주당 배당
+        'per_share_prev': '-',     # 전기 주당 배당
+        'payout_now': '-',         # 당기 배당성향
+        'payout_prev': '-',        # 전기 배당성향
+        'yoy': None,               # 전년 대비 증감률 %
+        'per_share_now_int': 0,    # 계산용 정수 (100주, 수익률)
+        'amount_per_100': '-',     # 100주 보유 시 수령액
+        'yield_pct': None,         # 배당수익률 (%)
+    }
 
+    # 1) 자동으로 가장 최근 사업보고서 연도 찾기
+    latest_year = engine.get_latest_dividend_year(corp_code)
+    if latest_year:
+        dividends['year'] = latest_year
+        div = engine._get('alotMatter.json', {
+            'corp_code': corp_code, 'bsns_year': latest_year, 'reprt_code': '11011',
+        })
+        if div.get('status') == '000':
+            for item in div.get('list', []):
+                cat = item.get('se', '')
+                if '주당 현금배당금' in cat and '보통주' in item.get('stock_knd', ''):
+                    dividends['per_share_now'] = item.get('thstrm', '-')
+                    dividends['per_share_prev'] = item.get('frmtrm', '-')
+                    try:
+                        n = float(str(dividends['per_share_now']).replace(',', ''))
+                        p = float(str(dividends['per_share_prev']).replace(',', ''))
+                        dividends['per_share_now_int'] = int(n)
+                        if p > 0:
+                            dividends['yoy'] = round((n - p) / p * 100, 1)
+
+                        # 100주 보유 시 수령액
+                        if n > 0:
+                            amount = int(n * 100)
+                            dividends['amount_per_100'] = f"{amount:,}원"
+
+                        # 배당수익률 (= 배당 / 현재가 * 100)
+                        if n > 0 and stock and stock.get('price'):
+                            yield_pct = round(n / stock['price'] * 100, 2)
+                            dividends['yield_pct'] = yield_pct
+                    except (ValueError, TypeError):
+                        pass
+                if '현금배당성향' in cat:
+                    dividends['payout_now'] = item.get('thstrm', '-')
+                    dividends['payout_prev'] = item.get('frmtrm', '-')
+
+    # ========================================
+    # 임원 보수 분석
+    # ========================================
     pay = engine._get('indvdlByPay.json', {
-        'corp_code': corp_code, 'bsns_year': '2024', 'reprt_code': '11011',
+        'corp_code': corp_code, 'bsns_year': latest_year or '2024', 'reprt_code': '11011',
     })
     executives = []
     if pay.get('status') == '000':

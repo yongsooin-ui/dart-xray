@@ -340,6 +340,110 @@
             background: #7f1d1d; color: #fecaca;
             padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;
         }
+        /* ===== 배당 KPI 박스 ===== */
+        .div-kpi-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .div-kpi-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 16px 18px;
+            background: #0f1419;
+            border-radius: 10px;
+            border-left: 3px solid #fbbf24;
+        }
+        .div-kpi-label {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .div-kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fbbf24;
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+        .div-kpi-sub {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* ===== 최근 배당결정 공시 박스 ===== */
+        .div-recent-notice {
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            background: #1a1f2e;
+            border-left: 3px solid #4ade80;
+            border-radius: 8px;
+        }
+        .div-notice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .div-notice-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #86efac;
+        }
+        .div-notice-pattern {
+            display: inline-block;
+            padding: 2px 10px;
+            background: #14532d;
+            color: #86efac;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .div-notice-line {
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        .div-notice-date {
+            color: #9ca3af;
+            font-size: 12px;
+            font-family: 'SF Mono', monospace;
+        }
+        .div-notice-name {
+            color: #e6e6e6;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .div-notice-meta {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        /* ===== 배당 안내 문구 ===== */
+        .div-disclaimer {
+            margin-top: 16px;
+            padding: 10px 14px;
+            background: #1a1f2e;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #9ca3af;
+            line-height: 1.5;
+        }
+        /* 배당 박스 모바일 최적화 */
+        @media (max-width: 600px) {
+            .div-kpi-row { gap: 10px; }
+            .div-kpi-box { padding: 12px 14px; min-width: 100%; }
+            .div-kpi-value { font-size: 20px; }
+            .div-kpi-label { font-size: 11px; }
+            .div-recent-notice { padding: 12px; }
+            .div-notice-name { font-size: 12px; }
+        }
         .empty { color: #9ca3af; font-style: italic; padding: 8px 0; }
         .warning-note {
             background: #422006; color: #fcd34d;
@@ -900,7 +1004,28 @@
                 </div>
 
                 <div class="card">
-                    <h2>💰 배당 분석 (2024년 사업보고서)</h2>
+                    <h2>💰 배당 분석 ({{ result.dividends.year }}년 사업보고서 기준)</h2>
+
+                    {# ===== 핵심 KPI 박스: 100주 수령액 + 배당수익률 ===== #}
+                    {% if result.dividends.amount_per_100 != '-' %}
+                    <div class="div-kpi-row">
+                        <div class="div-kpi-box">
+                            <div class="div-kpi-label">100주 보유 시 연간 수령액 ({{ result.dividends.year }}년 기준)</div>
+                            <div class="div-kpi-value">{{ result.dividends.amount_per_100 }}</div>
+                            <div class="div-kpi-sub">주당 {{ result.dividends.per_share_now }}원 × 100주</div>
+                        </div>
+                        {% if result.dividends.yield_pct is not none %}
+                        <div class="div-kpi-box">
+                            <div class="div-kpi-label">배당수익률 ({{ result.dividends.year }}년 배당 ÷ 현재가)</div>
+                            <div class="div-kpi-value">{{ result.dividends.yield_pct }}%</div>
+                            <div class="div-kpi-sub">현재가 대비</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+
+                    {# ===== 사업보고서 상세 ===== #}
                     <div class="stat">
                         <span class="stat-label">주당 현금배당금 (당기)</span>
                         <span>{{ result.dividends.per_share_now }}원</span>
@@ -925,6 +1050,13 @@
                         <span class="stat-label">현금배당성향 (전기)</span>
                         <span>{{ result.dividends.payout_prev }}%</span>
                     </div>
+                    <div class="div-disclaimer">
+                        ℹ️ 사업보고서 기준 연간 배당 데이터입니다. 분기/반기 배당사의 경우 정확한 회차별 금액은 DART 공시를 확인하세요.
+                    </div>
+
+                    {% if result.dividends.year == '-' %}
+                        <div class="empty">사업보고서 배당 데이터를 불러올 수 없습니다.</div>
+                    {% endif %}
                 </div>
 
                 <div class="card">
