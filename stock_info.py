@@ -89,13 +89,16 @@ def get_stock_info(stock_code, corp_code=None):
                 except (ValueError, TypeError):
                     change_pct = 0
 
+            # 한글 텍스트로 방향 판정 (네이버는 ico up/down 클래스 + 상승/하락 텍스트 사용)
             html_str = str(exday_tag)
-            if 'ico_up' in html_str or 'point_up' in html_str:
+            if '상승' in html_str:
                 direction = 'up'
-            elif 'ico_down' in html_str or 'point_dn' in html_str:
+            elif '하락' in html_str:
                 direction = 'down'
                 change = -abs(change)
                 change_pct = -abs(change_pct)
+            elif '보합' in html_str:
+                direction = 'flat'
 
         # 전일 종가
         prev_close = price - change if change else price
