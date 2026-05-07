@@ -73,24 +73,47 @@
             color: #9ca3af; font-size: 13px; margin-bottom: 20px;
         }
 
-        /* 탭 */
+        /* ===== 탭 (강화) ===== */
         .tabs {
-            display: flex; gap: 4px;
-            background: #0f1419; padding: 4px;
-            border-radius: 10px; margin-bottom: 20px;
+            display: flex; gap: 6px;
+            background: #0f1419; padding: 6px;
+            border-radius: 12px; margin-bottom: 20px;
+            border: 1px solid #1f2937;
         }
         .tab-btn {
-            flex: 1; padding: 10px 12px; font-size: 14px; font-weight: 600;
-            background: transparent; color: #9ca3af;
+            flex: 1; padding: 12px 14px; font-size: 14px; font-weight: 700;
+            background: transparent; color: #6b7280;
             border: none; border-radius: 8px; cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.2s ease;
+            position: relative;
         }
-        .tab-btn:hover { color: #e6e6e6; }
-        .tab-btn.active { background: #374151; color: #e6e6e6; }
+        .tab-btn:hover { color: #d1d5db; background: rgba(55, 65, 81, 0.3); }
+
+        /* 탭 활성화 시 — 카테고리별 색상 */
+        .tab-btn.active[data-tab="bad"] {
+            background: linear-gradient(135deg, #7f1d1d 0%, #4c1d1d 100%);
+            color: #fecaca;
+            box-shadow: 0 2px 12px rgba(248, 113, 113, 0.25);
+        }
+        .tab-btn.active[data-tab="good"] {
+            background: linear-gradient(135deg, #14532d 0%, #052e16 100%);
+            color: #86efac;
+            box-shadow: 0 2px 12px rgba(74, 222, 128, 0.25);
+        }
+        .tab-btn.active[data-tab="neutral"] {
+            background: linear-gradient(135deg, #1e3a5f 0%, #172a45 100%);
+            color: #93c5fd;
+            box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2);
+        }
+
         .tab-count {
-            display: inline-block; margin-left: 4px;
-            padding: 1px 7px; border-radius: 10px;
-            background: #1f2937; font-size: 12px;
+            display: inline-block; margin-left: 6px;
+            padding: 2px 9px; border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            font-size: 12px; font-weight: 700;
+        }
+        .tab-btn.active .tab-count {
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .tab-panel { display: none; }
@@ -454,6 +477,194 @@
             background: #7f1d1d; color: #fecaca;
             padding: 16px; border-radius: 8px;
         }
+        /* ===== 랜딩 섹션 ===== */
+        .landing {
+            text-align: center;
+            padding: 20px 0 40px;
+        }
+        .landing-tagline {
+            display: inline-block;
+            padding: 8px 18px;
+            background: #1e3a5f;
+            color: #93c5fd;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+        .landing-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .feature-card {
+            background: #1f2937;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: left;
+            border-top: 3px solid #374151;
+            transition: all 0.2s ease;
+        }
+        .feature-card:hover {
+            border-top-color: #60a5fa;
+            transform: translateY(-2px);
+        }
+        .feature-card:nth-child(1) { border-top-color: #4ade80; }
+        .feature-card:nth-child(2) { border-top-color: #fbbf24; }
+        .feature-card:nth-child(3) { border-top-color: #f87171; }
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            line-height: 1;
+        }
+        .feature-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #e6e6e6;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .feature-desc {
+            font-size: 13px;
+            color: #9ca3af;
+            line-height: 1.6;
+        }
+        .landing-cta {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 24px;
+            padding: 14px 20px;
+            background: #1a1f2e;
+            border-radius: 10px;
+            border: 1px dashed #374151;
+        }
+        .landing-cta strong {
+            color: #93c5fd;
+        }
+        .landing-disclaimer {
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.7;
+            padding: 14px 20px;
+            background: #1a1f2e;
+            border-radius: 8px;
+        }
+
+        /* 모바일 최적화 */
+        @media (max-width: 600px) {
+            .landing-tagline { font-size: 12px; padding: 6px 14px; margin-bottom: 24px; }
+            .landing-features {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 24px;
+            }
+            .feature-card { padding: 20px 16px; }
+            .feature-icon { font-size: 28px; margin-bottom: 10px; }
+            .feature-title { font-size: 14px; }
+            .feature-desc { font-size: 12.5px; }
+            .landing-cta { font-size: 13px; padding: 12px 16px; }
+            .landing-disclaimer { font-size: 10.5px; padding: 12px 16px; }
+        }
+        /* ===== 로딩 오버레이 ===== */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 20, 25, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .loading-content {
+            text-align: center;
+            max-width: 400px;
+            padding: 0 24px;
+        }
+        .loading-spinner {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 28px;
+        }
+        .spinner-ring {
+            position: absolute;
+            top: 0; left: 0;
+            width: 80px;
+            height: 80px;
+            border: 4px solid #1f2937;
+            border-top-color: #60a5fa;
+            border-right-color: #f87171;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
+        .spinner-emoji {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-title {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #f87171);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 24px;
+        }
+        .loading-steps {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .loading-step {
+            padding: 8px 14px;
+            margin-bottom: 6px;
+            background: #1f2937;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #6b7280;
+            transition: all 0.4s ease;
+            opacity: 0.5;
+        }
+        .loading-step.active {
+            background: #1e3a5f;
+            color: #93c5fd;
+            opacity: 1;
+            transform: translateX(4px);
+        }
+        .loading-step.done {
+            background: #14532d;
+            color: #86efac;
+            opacity: 0.8;
+        }
+        .loading-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .loading-content { max-width: 320px; }
+            .loading-spinner { width: 64px; height: 64px; }
+            .spinner-ring { width: 64px; height: 64px; border-width: 3px; }
+            .spinner-emoji { font-size: 26px; }
+            .loading-title { font-size: 18px; margin-bottom: 20px; }
+            .loading-step { font-size: 12px; padding: 7px 12px; }
+        }
         /* ===== 주가 헤더 ===== */
         .stock-header { padding: 24px 28px; }
         .stock-top {
@@ -518,46 +729,109 @@
             font-size: 11px; color: #6b7280;
             margin-top: 8px; text-align: right;
         }
-        /* ===== 공시 종합 점수 카드 ===== */
+        /* ===== 공시 종합 점수 카드 (강화 버전) ===== */
         .summary-card {
-            padding: 24px 28px;
+            padding: 28px 32px;
             border-left: 4px solid #374151;
+            position: relative;
+            overflow: hidden;
         }
-        .summary-card.good { border-left-color: #4ade80; }
-        .summary-card.bad { border-left-color: #f87171; }
-        .summary-card.neutral { border-left-color: #60a5fa; }
+        /* 카드 전체에 살짝 색조 그라디언트 */
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.04;
+            pointer-events: none;
+        }
+        .summary-card.good {
+            border-left-color: #4ade80;
+        }
+        .summary-card.good::before {
+            background: radial-gradient(ellipse at top left, #4ade80, transparent 60%);
+            opacity: 0.08;
+        }
+        .summary-card.bad {
+            border-left-color: #f87171;
+        }
+        .summary-card.bad::before {
+            background: radial-gradient(ellipse at top left, #f87171, transparent 60%);
+            opacity: 0.08;
+        }
+        .summary-card.neutral {
+            border-left-color: #60a5fa;
+        }
+        .summary-card.neutral::before {
+            background: radial-gradient(ellipse at top left, #60a5fa, transparent 60%);
+            opacity: 0.06;
+        }
 
         .summary-title {
             font-size: 14px; color: #9ca3af;
             font-weight: 600; margin-bottom: 16px;
             text-transform: none;
+            position: relative;
         }
         .summary-body {
             display: flex; gap: 28px;
             align-items: center; flex-wrap: wrap;
+            position: relative;
         }
         .summary-main {
             text-align: center;
-            min-width: 130px;
-            padding: 12px 16px;
+            min-width: 160px;
+            padding: 20px 24px;
             background: #0f1419;
-            border-radius: 10px;
+            border-radius: 14px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+        /* 카테고리별 박스 자체 색조 */
+        .summary-card.good .summary-main {
+            background: linear-gradient(135deg, #0f1419 0%, #14532d 200%);
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.15);
+        }
+        .summary-card.bad .summary-main {
+            background: linear-gradient(135deg, #0f1419 0%, #7f1d1d 200%);
+            box-shadow: 0 4px 20px rgba(248, 113, 113, 0.15);
+        }
+        .summary-card.neutral .summary-main {
+            background: linear-gradient(135deg, #0f1419 0%, #1e3a5f 200%);
+            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.15);
         }
         .summary-emoji {
-            font-size: 44px; line-height: 1;
-            margin-bottom: 6px;
+            font-size: 56px;
+            line-height: 1;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
         }
         .summary-score {
-            font-size: 28px; font-weight: 700;
-            line-height: 1; margin-bottom: 4px;
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
         }
-        .summary-card.good .summary-score { color: #4ade80; }
-        .summary-card.bad .summary-score { color: #f87171; }
-        .summary-card.neutral .summary-score { color: #9ca3af; }
+        .summary-card.good .summary-score {
+            color: #4ade80;
+            text-shadow: 0 2px 12px rgba(74, 222, 128, 0.3);
+        }
+        .summary-card.bad .summary-score {
+            color: #f87171;
+            text-shadow: 0 2px 12px rgba(248, 113, 113, 0.3);
+        }
+        .summary-card.neutral .summary-score {
+            color: #93c5fd;
+            text-shadow: 0 2px 12px rgba(147, 197, 253, 0.2);
+        }
         .summary-label {
-            font-size: 13px; font-weight: 600;
-            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
+        .summary-card.good .summary-label { color: #86efac; }
+        .summary-card.bad .summary-label { color: #fecaca; }
+        .summary-card.neutral .summary-label { color: #93c5fd; }
 
         .summary-detail {
             flex: 1; min-width: 260px;
@@ -566,22 +840,52 @@
             color: #d1d5db; font-size: 14px;
             line-height: 1.6; margin-bottom: 14px;
         }
+        /* 진행 바 (강화) */
         .summary-bar {
-            display: flex; height: 10px;
-            background: #0f1419; border-radius: 5px;
-            overflow: hidden; margin-bottom: 10px;
+            display: flex; height: 14px;
+            background: #0f1419; border-radius: 7px;
+            overflow: hidden; margin-bottom: 12px;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
         }
-        .bar-bad { background: #f87171; }
-        .bar-neutral { background: #4b5563; }
-        .bar-good { background: #4ade80; }
+        .bar-bad {
+            background: linear-gradient(90deg, #dc2626, #f87171);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.1);
+        }
+        .bar-neutral {
+            background: linear-gradient(90deg, #4b5563, #6b7280);
+        }
+        .bar-good {
+            background: linear-gradient(90deg, #16a34a, #4ade80);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.1);
+        }
         .summary-breakdown {
-            display: flex; gap: 12px;
-            font-size: 12px; flex-wrap: wrap;
+            display: flex; gap: 14px;
+            font-size: 13px; flex-wrap: wrap;
+            font-weight: 700;
         }
-        .breakdown-bad { color: #f87171; font-weight: 600; }
-        .breakdown-neutral { color: #9ca3af; font-weight: 600; }
-        .breakdown-good { color: #4ade80; font-weight: 600; }
-        .breakdown-total { color: #6b7280; }
+        .breakdown-bad {
+            color: #fca5a5;
+            padding: 4px 10px;
+            background: rgba(248, 113, 113, 0.12);
+            border-radius: 6px;
+        }
+        .breakdown-neutral {
+            color: #d1d5db;
+            padding: 4px 10px;
+            background: rgba(156, 163, 175, 0.1);
+            border-radius: 6px;
+        }
+        .breakdown-good {
+            color: #86efac;
+            padding: 4px 10px;
+            background: rgba(74, 222, 128, 0.12);
+            border-radius: 6px;
+        }
+        .breakdown-total {
+            color: #6b7280;
+            font-weight: 500;
+            align-self: center;
+        }
 
         @media (max-width: 600px) {
             body { padding: 20px 12px; }
@@ -600,18 +904,21 @@
             .stock-stats { gap: 16px; }
             .stat-mini-value { font-size: 14px; }
 
-            .summary-card { padding: 20px 18px; }
-            .summary-body { flex-direction: column; gap: 16px; align-items: stretch; }
-            .summary-main { align-self: center; width: 140px; padding: 10px 12px; }
-            .summary-emoji { font-size: 36px; }
-            .summary-score { font-size: 24px; }
-            .summary-label { font-size: 12px; }
+            .summary-card { padding: 22px 20px; }
+            .summary-body { flex-direction: column; gap: 18px; align-items: stretch; }
+            .summary-main { align-self: center; width: 170px; padding: 18px 20px; }
+            .summary-emoji { font-size: 44px; margin-bottom: 6px; }
+            .summary-score { font-size: 30px; margin-bottom: 4px; }
+            .summary-label { font-size: 13px; }
             .summary-description { font-size: 13px; }
+            .summary-bar { height: 12px; }
+            .summary-breakdown { font-size: 12px; gap: 8px; }
+            .breakdown-bad, .breakdown-neutral, .breakdown-good { padding: 3px 8px; }
 
             .hero { padding: 20px 18px; }
             .hero h2 { font-size: 19px; }
             .hero-sub { font-size: 12px; }
-            .tab-btn { font-size: 12px; padding: 8px 6px; }
+            .tab-btn { font-size: 12px; padding: 10px 6px; }
             .tab-count { padding: 1px 6px; font-size: 11px; }
 
             .sig-card { padding: 14px; }
@@ -638,6 +945,23 @@
     </style>
 </head>
 <body>
+    <!-- 로딩 오버레이 (분석 중 표시) -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-emoji">🩻</div>
+            </div>
+            <div class="loading-title">DART X-RAY 분석 중</div>
+            <div class="loading-steps">
+                <div class="loading-step active" id="step1">📋 공시 데이터 수집</div>
+                <div class="loading-step" id="step2">🔬 자금목적·시총 대비 심층 분석</div>
+                <div class="loading-step" id="step3">💰 배당·임원·전환사채 종합</div>
+                <div class="loading-step" id="step4">📊 종합 점수 계산</div>
+            </div>
+            <div class="loading-hint">잠시만 기다려주세요. 평균 5~10초 소요됩니다.</div>
+        </div>
+    </div>
     <div class="container">
         <header>
             <h1>🩻 DART X-RAY</h1>
@@ -653,7 +977,51 @@
             </div>
             <button type="submit">분석하기</button>
         </form>
+        {# ===== 랜딩 섹션 (검색 전에만 표시) ===== #}
+        {% if not result %}
+        <div class="landing">
+            <div class="landing-tagline">
+                💡 일반 투자자를 위한, VC 시각의 공시 분석 도구
+            </div>
 
+            <div class="landing-features">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">공시 50개+ 자동 해석</div>
+                    <div class="feature-desc">
+                        호재인지 악재인지 한눈에. 점수와 이모지로 30일치 공시를 정리해드립니다.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔬</div>
+                    <div class="feature-title">자금목적·시총 대비 심층 분석</div>
+                    <div class="feature-desc">
+                        같은 전환사채라도 운영자금이면 위험, 시설자금이면 안전.
+                        자사주도 시총 대비 0.1%면 의미 없음 — 이런 깊이 있는 해석이 자동.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <div class="feature-title">배당·임원·전환사채 한 화면</div>
+                    <div class="feature-desc">
+                        100주 보유 시 배당 수령액부터 임원 보수, 전환사채 이력까지.
+                        흩어진 정보를 한 번에.
+                    </div>
+                </div>
+            </div>
+
+            <div class="landing-cta">
+                ↑ 위 검색창에 <strong>기업명, 종목코드, 고유번호</strong> 중 하나를 입력하세요
+            </div>
+
+            <div class="landing-disclaimer">
+                ⚠️ 본 도구는 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.<br>
+                모든 데이터는 DART 전자공시시스템과 네이버 금융을 기반으로 합니다.
+            </div>
+        </div>
+        {% endif %}
         {% if result %}
             {% if result.error %}
                 <div class="error">{{ result.error }}</div>
@@ -1104,6 +1472,29 @@
     </div>
 
     <script>
+        // 로딩 오버레이 처리
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const searchForm = document.getElementById('searchForm');
+
+        searchForm.addEventListener('submit', () => {
+            loadingOverlay.classList.add('active');
+
+            // 단계별 진행 애니메이션 (실제 백엔드와 무관, 시각적 피드백용)
+            setTimeout(() => {
+                document.getElementById('step1').classList.add('done');
+                document.getElementById('step2').classList.add('active');
+            }, 1000);
+            setTimeout(() => {
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step2').classList.add('done');
+                document.getElementById('step3').classList.add('active');
+            }, 3000);
+            setTimeout(() => {
+                document.getElementById('step3').classList.remove('active');
+                document.getElementById('step3').classList.add('done');
+                document.getElementById('step4').classList.add('active');
+            }, 5000);
+        });
         const input = document.getElementById('companyInput');
         const dropdown = document.getElementById('suggestions');
         const form = document.getElementById('searchForm');
@@ -1162,15 +1553,15 @@
                 e.preventDefault();
                 activeIndex = Math.min(activeIndex + 1, items.length - 1);
                 updateActive(items);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                activeIndex = Math.max(activeIndex - 1, -1);
-                updateActive(items);
             } else if (e.key === 'Enter' && activeIndex >= 0) {
                 e.preventDefault();
                 input.value = items[activeIndex].dataset.name;
                 dropdown.style.display = 'none';
                 form.submit();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, -1);
+                updateActive(items);
             } else if (e.key === 'Escape') {
                 dropdown.style.display = 'none';
             }
