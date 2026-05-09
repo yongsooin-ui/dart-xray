@@ -13,13 +13,24 @@
         }
         .container { max-width: 900px; margin: 0 auto; }
         header { text-align: center; margin-bottom: 32px; }
-        header h1 {
+       header h1 {
             font-size: 36px;
             background: linear-gradient(90deg, #60a5fa, #f87171);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 8px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        header h1:hover {
+            -webkit-text-fill-color: initial;
+            background: none;
+        }
+        header h1::selection,
+        header h1 *::selection {
+            -webkit-text-fill-color: initial;
+            background: rgba(96, 165, 250, 0.3);
         }
         header p { color: #9ca3af; font-size: 14px; }
 
@@ -477,6 +488,147 @@
             background: #7f1d1d; color: #fecaca;
             padding: 16px; border-radius: 8px;
         }
+        .error-card {
+            background: #1f2937;
+            padding: 32px 28px;
+            border-radius: 12px;
+            text-align: center;
+            border-top: 3px solid #f87171;
+        }
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            line-height: 1;
+        }
+        .error-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fecaca;
+            margin-bottom: 8px;
+        }
+        .error-message {
+            font-size: 14px;
+            color: #d1d5db;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .error-hint {
+            display: inline-block;
+            text-align: left;
+            background: #0f1419;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #9ca3af;
+            line-height: 1.8;
+        }
+        .error-hint strong {
+            color: #93c5fd;
+        }
+        .empty-card {
+            text-align: center;
+            padding: 40px 24px;
+            background: #0f1419;
+            border-radius: 10px;
+            margin: 8px 0;
+        }
+        .empty-card-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            line-height: 1;
+            opacity: 0.6;
+        }
+        .empty-card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #d1d5db;
+            margin-bottom: 6px;
+        }
+        .empty-card-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .all-empty-notice {
+            text-align: center;
+            padding: 32px 24px;
+            background: #1a1f2e;
+            border-radius: 10px;
+            border: 1px dashed #374151;
+        }
+        .all-empty-notice-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+        .all-empty-notice-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #93c5fd;
+            margin-bottom: 6px;
+        }
+        .all-empty-notice-desc {
+            font-size: 13px;
+            color: #9ca3af;
+            line-height: 1.6;
+        }
+        .disclaimer-card {
+            background: #161b22;
+            border: 1px solid #1f2937;
+        }
+        .disclaimer-card h2 {
+            color: #9ca3af !important;
+            font-size: 16px !important;
+        }
+        .disclaimer-section {
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #1f2937;
+        }
+        .disclaimer-section:last-of-type {
+            border-bottom: none;
+            margin-bottom: 8px;
+            padding-bottom: 0;
+        }
+        .disclaimer-label {
+            font-size: 12px;
+            color: #93c5fd;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+        .disclaimer-text {
+            font-size: 12.5px;
+            color: #9ca3af;
+            line-height: 1.7;
+        }
+        .disclaimer-text strong {
+            color: #d1d5db;
+            font-weight: 600;
+        }
+        .disclaimer-footer {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #1f2937;
+            font-size: 11.5px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .disclaimer-link {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        .disclaimer-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .disclaimer-card { padding: 16px 14px; }
+            .disclaimer-card h2 { font-size: 14px !important; }
+            .disclaimer-label { font-size: 11px; }
+            .disclaimer-text { font-size: 11.5px; line-height: 1.65; }
+            .disclaimer-footer { font-size: 11px; }
+        }
         /* ===== 랜딩 섹션 ===== */
         .landing {
             text-align: center;
@@ -886,6 +1038,16 @@
             font-weight: 500;
             align-self: center;
         }
+        .summary-warn-mini {
+            margin-top: 14px;
+            padding: 10px 14px;
+            background: rgba(251, 191, 36, 0.08);
+            border-left: 3px solid #fbbf24;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #fcd34d;
+            line-height: 1.5;
+        }
 
         @media (max-width: 600px) {
             body { padding: 20px 12px; }
@@ -964,7 +1126,7 @@
     </div>
     <div class="container">
         <header>
-            <h1>🩻 DART X-RAY</h1>
+            <h1><a href="/" style="text-decoration: none; color: inherit; -webkit-text-fill-color: inherit;">🩻 DART X-RAY</a></h1>
             <p>공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진</p>
         </header>
 
@@ -1024,7 +1186,17 @@
         {% endif %}
         {% if result %}
             {% if result.error %}
-                <div class="error">{{ result.error }}</div>
+                <div class="error-card">
+                    <div class="error-icon">🔍</div>
+                    <div class="error-title">분석할 수 없습니다</div>
+                    <div class="error-message">{{ result.error }}</div>
+                    <div class="error-hint">
+                        💡 <strong>이렇게 시도해보세요:</strong><br>
+                        • 정확한 기업명으로 검색 (예: 삼성전자, SK하이닉스)<br>
+                        • 종목코드 6자리 입력 (예: 005930)<br>
+                        • 검색창 자동완성에서 선택
+                    </div>
+                </div>
             {% else %}
 
                 {% if result.stock %}
@@ -1103,6 +1275,9 @@
                                 <span class="breakdown-good">호재 {{ result.summary.good_ct }}</span>
                                 <span class="breakdown-total">· 총 {{ result.summary.count }}건</span>
                             </div>
+                            <div class="summary-warn-mini">
+                                ⚠️ 본 점수는 공시 제목 기반의 자동 분석이며, 투자 판단의 참고 자료입니다. 실제 매매 결정 전 DART 원문과 재무제표를 직접 확인하세요.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1111,6 +1286,17 @@
                 <div class="card hero">
                     <h2>📰 {{ result.company }} · 최근 30일 공시</h2>
                     <p class="hero-sub">공시 제목을 해석해 왜 호재/악재인지 설명해드립니다.</p>
+
+                    {% if (result.signals_bad|length + result.signals_good|length + result.signals_neutral|length) == 0 %}
+                    <div class="all-empty-notice">
+                        <div class="all-empty-notice-icon">🌙</div>
+                        <div class="all-empty-notice-title">최근 30일간 공시가 없습니다</div>
+                        <div class="all-empty-notice-desc">
+                            이 기업은 지난 30일 동안 DART에 공시한 내역이 없습니다.<br>
+                            신규 상장사이거나 공시 활동이 적은 기업일 수 있습니다.
+                        </div>
+                    </div>
+                    {% else %}
 
                     <div class="tabs">
                         <button type="button" class="tab-btn active" data-tab="bad">
@@ -1369,6 +1555,7 @@
                             <div class="empty">최근 30일간 일반 공시가 없습니다.</div>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </div>
 
                 <div class="card">
@@ -1423,7 +1610,14 @@
                     </div>
 
                     {% if result.dividends.year == '-' %}
-                        <div class="empty">사업보고서 배당 데이터를 불러올 수 없습니다.</div>
+                        <div class="empty-card">
+                            <div class="empty-card-icon">📊</div>
+                            <div class="empty-card-title">배당 데이터 없음</div>
+                            <div class="empty-card-desc">
+                                무배당 기업이거나, 사업보고서가 아직 공시되지 않았습니다.<br>
+                                신규 상장사의 경우 첫 사업보고서 공시 후 데이터가 표시됩니다.
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
 
@@ -1432,8 +1626,9 @@
                     <div class="warning-note">
                         ⚠️ 보수총액에는 퇴직금·스톡옵션 행사이익이 포함될 수 있습니다.
                     </div>
-                    {% if result.executives %}
-                        {% for e in result.executives %}
+                    {% set valid_execs = result.executives | selectattr('name', 'ne', '-') | selectattr('name', 'ne', '') | list if result.executives else [] %}
+                    {% if valid_execs %}
+                        {% for e in valid_execs %}
                             <div class="exec">
                                 <span class="exec-name">{{ e.name }}</span>
                                 <span class="exec-position">{{ e.position }}</span>
@@ -1444,14 +1639,28 @@
                             </div>
                         {% endfor %}
                     {% else %}
-                        <div class="empty">현직 등기임원 데이터 없음.</div>
-                    {% endif %}
+                        <div class="empty-card">
+                            <div class="empty-card-icon">👤</div>
+                            <div class="empty-card-title">5억원 이상 보수자 없음</div>
+                            <div class="empty-card-desc">
+                                연 5억원 이상 받는 임원이 없거나,<br>
+                                사업보고서 데이터가 아직 공시되지 않았습니다.
+                            </div>
+                        </div>
+                    {% endif %} 
                 </div>
 
                 <div class="card">
                     <h2>📜 전환사채 이력 (최근 3년)</h2>
                     {% if result.cb_none %}
-                        <div class="empty">✨ 발행 이력 없음 — 재무 자신감의 신호일 수 있습니다.</div>
+                        <div class="empty-card">
+                            <div class="empty-card-icon">✨</div>
+                            <div class="empty-card-title">전환사채 발행 이력 없음</div>
+                            <div class="empty-card-desc">
+                                최근 3년간 전환사채 발행이 없습니다.<br>
+                                재무 자신감의 신호일 수 있습니다.
+                            </div>
+                        </div>
                     {% elif result.cbs %}
                         {% for cb in result.cbs %}
                             <div class="cb-item">
@@ -1465,6 +1674,38 @@
                             </div>
                         {% endfor %}
                     {% endif %}
+                </div>
+
+                <div class="card disclaimer-card">
+                    <h2>📌 데이터 출처 및 면책 조항</h2>
+                    <div class="disclaimer-section">
+                        <div class="disclaimer-label">데이터 출처</div>
+                        <div class="disclaimer-text">
+                            • 공시 데이터: 금융감독원 <strong>DART 전자공시시스템</strong> (Open API)<br>
+                            • 실시간 주가·시가총액: <strong>네이버 금융</strong> (약 15분 지연)<br>
+                            • 배당·임원·재무 데이터: DART 사업보고서 기준
+                        </div>
+                    </div>
+                    <div class="disclaimer-section">
+                        <div class="disclaimer-label">분석 방식의 한계</div>
+                        <div class="disclaimer-text">
+                            본 도구는 공시 제목과 일부 본문 키워드를 기반으로 한 <strong>자동 룰 베이스 분석</strong>입니다.
+                            맥락에 따라 호재/악재 판단이 달라질 수 있으며, 모든 공시의 의미를 정확히 반영하지 못할 수 있습니다.
+                            특히 신규 상장 기업, 비상장 모회사, 소형주는 데이터가 부족하거나 누락될 수 있습니다.
+                        </div>
+                    </div>
+                    <div class="disclaimer-section">
+                        <div class="disclaimer-label">투자 책임</div>
+                        <div class="disclaimer-text">
+                            본 서비스는 <strong>투자 정보 제공을 목적으로 한 참고 자료</strong>이며,
+                            특정 종목의 매수·매도 권유나 투자 자문이 아닙니다.
+                            모든 투자 판단과 그에 따른 손익은 <strong>투자자 본인에게 귀속</strong>되며,
+                            DART X-RAY는 본 자료를 활용한 투자 결과에 대해 어떠한 책임도 지지 않습니다.
+                        </div>
+                    </div>
+                    <div class="disclaimer-footer">
+                        ※ 정확한 정보는 반드시 <a href="https://dart.fss.or.kr" target="_blank" rel="noopener" class="disclaimer-link">DART 전자공시시스템 원문</a>을 확인하시기 바랍니다.
+                    </div>
                 </div>
 
             {% endif %}
