@@ -10,13 +10,18 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}🩻 DART X-RAY{% endif %}">
     <meta property="og:description" content="{% if result and result.company %}{% if result.summary and result.summary.count > 0 %}최근 30일 공시 종합 점수 {{ result.summary.total_score_fmt }}점 ({{ result.summary.label }}) · 호재 {{ result.summary.good_ct }} / 악재 {{ result.summary.bad_ct }} / 일반 {{ result.summary.neutral_ct }}{% else %}{{ result.company }}의 공시·배당·임원 보수를 한눈에 분석{% endif %}{% else %}공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진. 공시 50개+ 자동 해석, 자금목적·시총 대비 심층 분석.{% endif %}">
+    <meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="DART X-RAY - 한국 주식 공시 분석 엔진">
     <meta property="og:site_name" content="DART X-RAY">
     <meta property="og:locale" content="ko_KR">
 
-    {# ===== Twitter Card ===== #}
-    <meta name="twitter:card" content="summary">
+    {# ===== Twitter Card (큰 이미지로 업그레이드) ===== #}
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}🩻 DART X-RAY{% endif %}">
     <meta name="twitter:description" content="{% if result and result.company %}{{ result.company }}의 공시를 자동 분석. VC 시각의 깊이 있는 해석.{% else %}공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진{% endif %}">
+    <meta name="twitter:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
