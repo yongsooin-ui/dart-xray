@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from datetime import datetime, timedelta
+from urllib.parse import quote
 import requests, zipfile, io, json, os
 import xml.etree.ElementTree as ET
 import dart_xray as engine
@@ -369,8 +370,38 @@ def collect_analysis(corp_code, display_name, stock=None):
     }
 
 
+def _run_analysis(query):
+    """공통 분석 실행 함수 (POST/GET 둘 다에서 사용)"""
+    query = (query or '').strip()
+    if not query:
+        return None
+
+    corp_code, display_name, stock_code = resolve_corp_code(query)
+    if not corp_code:
+        return {
+            'error': f"'{query}'에 해당하는 상장기업을 찾을 수 없습니다.",
+            'query': query,
+        }
+
+    # 주가 정보 조회 (실패해도 분석은 계속 진행)
+    stock = get_stock_info(stock_code) if stock_code else None
+
+    result = collect_analysis(corp_code, display_name, stock=stock)
+    result['stock'] = stock
+    result['stock_code'] = stock_code
+    result['query'] = query  # 공유 URL 생성에 필요
+    result['share_url_param'] = quote(display_name)  # URL 인코딩된 공유용 파라미터
+
+    return result
+
+
 @app.route('/')
 def home():
+    # 쿼리 파라미터 ?q=삼성전자 가 있으면 자동 분석 (공유 URL 진입)
+    q = request.args.get('q', '').strip()
+    if q:
+        result = _run_analysis(q)
+        return render_template('index.html', result=result, prefill_query=q)
     return render_template('index.html', result=None)
 
 
@@ -383,24 +414,12 @@ def search():
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
+    """폼 제출 시: GET 방식의 공유 URL로 리다이렉트 (POST → GET)"""
     query = request.form.get('company', '').strip()
     if not query:
-        return render_template('index.html', result=None)
-
-    corp_code, display_name, stock_code = resolve_corp_code(query)
-    if not corp_code:
-        return render_template('index.html', result={
-            'error': f"'{query}'에 해당하는 상장기업을 찾을 수 없습니다."
-        })
-
-    # 주가 정보 조회 (실패해도 분석은 계속 진행)
-    stock = get_stock_info(stock_code) if stock_code else None
-
-    result = collect_analysis(corp_code, display_name, stock=stock)
-    result['stock'] = stock
-    result['stock_code'] = stock_code
-
-    return render_template('index.html', result=result)
+        return redirect(url_for('home'))
+    # 쿼리를 URL 파라미터로 변환해서 GET 라우트로 리다이렉트
+    return redirect(url_for('home', q=query))
 
 
 if __name__ == '__main__':

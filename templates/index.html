@@ -3,7 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DART X-RAY</title>
+    <title>{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}DART X-RAY · 공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진{% endif %}</title>
+    <meta name="description" content="{% if result and result.company %}{{ result.company }}의 최근 30일 공시, 배당, 임원 보수, 전환사채 이력을 한눈에. VC 시각의 자동 분석.{% else %}공시 50개+ 자동 해석. 자금목적·시총 대비 심층 분석. 100주 보유 시 배당 수령액까지. VC 시각의 공시 분석 도구.{% endif %}">
+
+    {# ===== Open Graph 메타태그 (카톡/트위터/페북 미리보기) ===== #}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}🩻 DART X-RAY{% endif %}">
+    <meta property="og:description" content="{% if result and result.company %}{% if result.summary and result.summary.count > 0 %}최근 30일 공시 종합 점수 {{ result.summary.total_score_fmt }}점 ({{ result.summary.label }}) · 호재 {{ result.summary.good_ct }} / 악재 {{ result.summary.bad_ct }} / 일반 {{ result.summary.neutral_ct }}{% else %}{{ result.company }}의 공시·배당·임원 보수를 한눈에 분석{% endif %}{% else %}공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진. 공시 50개+ 자동 해석, 자금목적·시총 대비 심층 분석.{% endif %}">
+    <meta property="og:site_name" content="DART X-RAY">
+    <meta property="og:locale" content="ko_KR">
+
+    {# ===== Twitter Card ===== #}
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}🩻 DART X-RAY{% endif %}">
+    <meta name="twitter:description" content="{% if result and result.company %}{{ result.company }}의 공시를 자동 분석. VC 시각의 깊이 있는 해석.{% else %}공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진{% endif %}">
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -77,6 +91,81 @@
         }
         .card h2 { font-size: 20px; margin-bottom: 16px; color: #60a5fa; }
 
+        /* ===== 공유 바 ===== */
+        .share-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            background: #1a1f2e;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #1f2937;
+            flex-wrap: wrap;
+        }
+        .share-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+            flex: 1;
+        }
+        .share-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #93c5fd;
+        }
+        .share-url {
+            font-size: 11px;
+            color: #6b7280;
+            font-family: 'SF Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .share-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .share-btn {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #1e3a5f;
+            color: #93c5fd;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .share-btn:hover {
+            background: #2563eb;
+            color: white;
+        }
+        .share-btn.copied {
+            background: #14532d;
+            color: #86efac;
+        }
+        .share-btn-kakao {
+            background: #fef3c7;
+            color: #78350f;
+        }
+        .share-btn-kakao:hover {
+            background: #fde68a;
+            color: #422006;
+        }
+        @media (max-width: 600px) {
+            .share-bar { padding: 12px 14px; gap: 10px; }
+            .share-label { font-size: 12px; }
+            .share-url { font-size: 10px; }
+            .share-btn { font-size: 12px; padding: 7px 11px; }
+            .share-actions { width: 100%; }
+            .share-btn { flex: 1; }
+        }
+
         /* ===== 공시 히어로 섹션 ===== */
         .hero { padding: 28px; }
         .hero h2 { font-size: 22px; margin-bottom: 4px; }
@@ -100,7 +189,6 @@
         }
         .tab-btn:hover { color: #d1d5db; background: rgba(55, 65, 81, 0.3); }
 
-        /* 탭 활성화 시 — 카테고리별 색상 */
         .tab-btn.active[data-tab="bad"] {
             background: linear-gradient(135deg, #7f1d1d 0%, #4c1d1d 100%);
             color: #fecaca;
@@ -130,7 +218,6 @@
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
-        /* 공시 카드 */
         .sig-card {
             background: #0f1419; padding: 16px;
             border-radius: 10px; margin-bottom: 10px;
@@ -179,7 +266,6 @@
             color: #e6e6e6; font-size: 14px;
             line-height: 1.65; padding: 4px 0;
         }
-        /* ===== CB 자금목적 심층 분석 박스 ===== */
         .cb-analysis {
             margin-top: 14px;
             padding: 14px 16px;
@@ -277,7 +363,6 @@
         .dot-biz-acq { background: #a78bfa; }
         .dot-etc { background: #6b7280; }
 
-        /* ===== 자사주 시총 대비 분석 박스 ===== */
         .treasury-analysis {
             margin-top: 14px;
             padding: 14px 16px;
@@ -333,7 +418,6 @@
             background: #1e3a5f;
             color: #93c5fd;
         }
-        /* 모바일 최적화 */
         @media (max-width: 600px) {
             .cb-analysis { padding: 12px; }
             .cb-title { font-size: 12px; }
@@ -358,7 +442,6 @@
             color: white;
         }
 
-        /* 나머지 카드들 */
         .stat { display: flex; justify-content: space-between; padding: 8px 0; }
         .stat-label { color: #9ca3af; }
         .yoy-up { color: #4ade80; }
@@ -374,7 +457,6 @@
             background: #7f1d1d; color: #fecaca;
             padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;
         }
-        /* ===== 배당 KPI 박스 ===== */
         .div-kpi-row {
             display: flex;
             gap: 12px;
@@ -407,7 +489,6 @@
             color: #6b7280;
         }
 
-        /* ===== 최근 배당결정 공시 박스 ===== */
         .div-recent-notice {
             margin-bottom: 16px;
             padding: 14px 16px;
@@ -459,7 +540,6 @@
             color: #6b7280;
             margin-bottom: 8px;
         }
-        /* ===== 배당 안내 문구 ===== */
         .div-disclaimer {
             margin-top: 16px;
             padding: 10px 14px;
@@ -469,7 +549,6 @@
             color: #9ca3af;
             line-height: 1.5;
         }
-        /* 배당 박스 모바일 최적화 */
         @media (max-width: 600px) {
             .div-kpi-row { gap: 10px; }
             .div-kpi-box { padding: 12px 14px; min-width: 100%; }
@@ -629,7 +708,6 @@
             .disclaimer-text { font-size: 11.5px; line-height: 1.65; }
             .disclaimer-footer { font-size: 11px; }
         }
-        /* ===== 랜딩 섹션 ===== */
         .landing {
             text-align: center;
             padding: 20px 0 40px;
@@ -703,7 +781,6 @@
             border-radius: 8px;
         }
 
-        /* 모바일 최적화 */
         @media (max-width: 600px) {
             .landing-tagline { font-size: 12px; padding: 6px 14px; margin-bottom: 24px; }
             .landing-features {
@@ -718,7 +795,6 @@
             .landing-cta { font-size: 13px; padding: 12px 16px; }
             .landing-disclaimer { font-size: 10.5px; padding: 12px 16px; }
         }
-        /* ===== 로딩 오버레이 ===== */
         .loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -817,7 +893,6 @@
             .loading-title { font-size: 18px; margin-bottom: 20px; }
             .loading-step { font-size: 12px; padding: 7px 12px; }
         }
-        /* ===== 주가 헤더 ===== */
         .stock-header { padding: 24px 28px; }
         .stock-top {
             display: flex; justify-content: space-between;
@@ -881,14 +956,12 @@
             font-size: 11px; color: #6b7280;
             margin-top: 8px; text-align: right;
         }
-        /* ===== 공시 종합 점수 카드 (강화 버전) ===== */
         .summary-card {
             padding: 28px 32px;
             border-left: 4px solid #374151;
             position: relative;
             overflow: hidden;
         }
-        /* 카드 전체에 살짝 색조 그라디언트 */
         .summary-card::before {
             content: '';
             position: absolute;
@@ -938,7 +1011,6 @@
             position: relative;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
         }
-        /* 카테고리별 박스 자체 색조 */
         .summary-card.good .summary-main {
             background: linear-gradient(135deg, #0f1419 0%, #14532d 200%);
             box-shadow: 0 4px 20px rgba(74, 222, 128, 0.15);
@@ -992,7 +1064,6 @@
             color: #d1d5db; font-size: 14px;
             line-height: 1.6; margin-bottom: 14px;
         }
-        /* 진행 바 (강화) */
         .summary-bar {
             display: flex; height: 14px;
             background: #0f1419; border-radius: 7px;
@@ -1107,7 +1178,6 @@
     </style>
 </head>
 <body>
-    <!-- 로딩 오버레이 (분석 중 표시) -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="loading-spinner">
@@ -1134,12 +1204,12 @@
             <div class="search-wrapper">
                 <input type="text" name="company" id="companyInput"
                        placeholder="기업명, 종목코드(005930), 고유번호(00126380)"
+                       value="{{ result.company if result and result.company else (prefill_query if prefill_query else '') }}"
                        autocomplete="off" autofocus>
                 <div class="suggestions" id="suggestions"></div>
             </div>
             <button type="submit">분석하기</button>
         </form>
-        {# ===== 랜딩 섹션 (검색 전에만 표시) ===== #}
         {% if not result %}
         <div class="landing">
             <div class="landing-tagline">
@@ -1252,6 +1322,22 @@
                     <div class="stock-footnote" style="margin-top:12px;">⚠️ 실시간 주가를 일시적으로 불러올 수 없습니다.</div>
                 </div>
                 {% endif %}
+
+                {# ===== 공유 버튼 ===== #}
+                <div class="share-bar">
+                    <div class="share-info">
+                        <span class="share-label">📊 분석 결과 공유하기</span>
+                        <span class="share-url" id="shareUrl"></span>
+                    </div>
+                    <div class="share-actions">
+                        <button type="button" class="share-btn" id="copyBtn" onclick="copyShareUrl()">
+                            <span id="copyBtnText">🔗 링크 복사</span>
+                        </button>
+                        <button type="button" class="share-btn share-btn-kakao" onclick="shareKakao()">
+                            💬 카톡 공유
+                        </button>
+                    </div>
+                </div>
 
                 {% if result.summary and result.summary.count > 0 %}
                 <div class="card summary-card summary-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
@@ -1561,7 +1647,6 @@
                 <div class="card">
                     <h2>💰 배당 분석 ({{ result.dividends.year }}년 사업보고서 기준)</h2>
 
-                    {# ===== 핵심 KPI 박스: 100주 수령액 + 배당수익률 ===== #}
                     {% if result.dividends.amount_per_100 != '-' %}
                     <div class="div-kpi-row">
                         <div class="div-kpi-box">
@@ -1579,8 +1664,6 @@
                     </div>
                     {% endif %}
 
-
-                    {# ===== 사업보고서 상세 ===== #}
                     <div class="stat">
                         <span class="stat-label">주당 현금배당금 (당기)</span>
                         <span>{{ result.dividends.per_share_now }}원</span>
@@ -1647,7 +1730,7 @@
                                 사업보고서 데이터가 아직 공시되지 않았습니다.
                             </div>
                         </div>
-                    {% endif %} 
+                    {% endif %}
                 </div>
 
                 <div class="card">
@@ -1713,6 +1796,77 @@
     </div>
 
     <script>
+        // ===== 공유 URL 생성 및 복사 =====
+        function getShareUrl() {
+            return window.location.href.split('?')[0] + '?q=' + encodeURIComponent(
+                document.getElementById('companyInput').value || ''
+            );
+        }
+
+        function initShareUrl() {
+            const urlEl = document.getElementById('shareUrl');
+            if (urlEl) {
+                urlEl.textContent = getShareUrl();
+            }
+        }
+
+        function copyShareUrl() {
+            const url = getShareUrl();
+            const btn = document.getElementById('copyBtn');
+            const btnText = document.getElementById('copyBtnText');
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showCopied(btn, btnText);
+                }).catch(() => {
+                    fallbackCopy(url, btn, btnText);
+                });
+            } else {
+                fallbackCopy(url, btn, btnText);
+            }
+        }
+
+        function fallbackCopy(text, btn, btnText) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showCopied(btn, btnText);
+            } catch (e) {
+                alert('복사 실패. URL: ' + text);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showCopied(btn, btnText) {
+            btn.classList.add('copied');
+            btnText.textContent = '✓ 복사됨!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btnText.textContent = '🔗 링크 복사';
+            }, 2000);
+        }
+
+        function shareKakao() {
+            const url = getShareUrl();
+            if (navigator.share) {
+                navigator.share({
+                    title: 'DART X-RAY 분석 결과',
+                    text: 'DART X-RAY로 분석한 기업 공시 결과',
+                    url: url,
+                }).catch(() => {});
+            } else {
+                copyShareUrl();
+                alert('링크가 복사되었습니다. 카카오톡에 붙여넣으세요!');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initShareUrl);
+
         // 로딩 오버레이 처리
         const loadingOverlay = document.getElementById('loadingOverlay');
         const searchForm = document.getElementById('searchForm');
@@ -1720,7 +1874,6 @@
         searchForm.addEventListener('submit', () => {
             loadingOverlay.classList.add('active');
 
-            // 단계별 진행 애니메이션 (실제 백엔드와 무관, 시각적 피드백용)
             setTimeout(() => {
                 document.getElementById('step1').classList.add('done');
                 document.getElementById('step2').classList.add('active');
