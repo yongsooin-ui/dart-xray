@@ -201,3 +201,134 @@ if __name__ == '__main__':
             print(f"   시총:   {info['market_cap_fmt']}")
         else:
             print(f"\n❌ [{code}] {desc} - 조회 실패")
+
+# ============================================================
+# 주가 차트 데이터 수집 (네이버 금융 일별 시세 스크래핑)
+# ============================================================
+
+def get_chart_data(stock_code, days=20):
+    """
+    네이버 금융에서 최근 N거래일 일별 종가 데이터 수집.
+    반환: SVG 차트 그리기에 바로 쓸 수 있는 dict.
+    실패 시 None 반환.
+
+    Args:
+        stock_code: '005930' 같은 6자리 종목코드
+        days: 거래일 수 (기본 20일 = 약 1개월)
+    """
+    if not stock_code or len(stock_code) != 6:
+        return None
+
+    try:
+        prices = []
+        dates = []
+        pages_needed = (days // 10) + 1
+
+        for page in range(1, pages_needed + 1):
+            url = f'https://finance.naver.com/item/sise_day.naver?code={stock_code}&page={page}'
+            r = requests.get(url, headers=HEADERS, timeout=5)
+            r.encoding = 'euc-kr'
+
+            if r.status_code != 200:
+                continue
+
+            soup = BeautifulSoup(r.text, 'lxml')
+            rows = soup.select('table.type2 tr')
+
+            for row in rows:
+                cells = row.select('td')
+                if len(cells) < 2:
+                    continue
+                date_text = cells[0].get_text(strip=True)
+                close_text = cells[1].get_text(strip=True)
+
+                if not date_text or not close_text or '.' not in date_text:
+                    continue
+
+                try:
+                    close_price = int(close_text.replace(',', ''))
+                    if close_price <= 0:
+                        continue
+                    dates.append(date_text)
+                    prices.append(close_price)
+                except ValueError:
+                    continue
+
+            if len(prices) >= days:
+                break
+
+        if len(prices) < 2:
+            return None
+
+        # 오래된 → 최신 순서로 정렬 (네이버는 최신이 위)
+        prices = list(reversed(prices[:days]))
+        dates = list(reversed(dates[:days]))
+
+        return _build_chart_svg_data(prices, dates)
+
+    except Exception as e:
+        print(f"[차트 데이터 오류] {stock_code}: {e}")
+        return None
+
+
+def _build_chart_svg_data(prices, dates):
+    """가격 배열을 받아 SVG path 문자열로 변환. viewBox는 300 x 60."""
+    if len(prices) < 2:
+        return None
+
+    width = 300
+    height = 60
+    padding_y = 4
+
+    min_price = min(prices)
+    max_price = max(prices)
+    price_range = max_price - min_price if max_price > min_price else 1
+
+    n = len(prices)
+    points = []
+
+    for i, price in enumerate(prices):
+        x = (i / (n - 1)) * width
+        y_normalized = (price - min_price) / price_range
+        y = height - padding_y - y_normalized * (height - 2 * padding_y)
+        points.append((x, y))
+
+    # 라인 path
+    line_path = f"M {points[0][0]:.2f} {points[0][1]:.2f}"
+    for x, y in points[1:]:
+        line_path += f" L {x:.2f} {y:.2f}"
+
+    # 면적 path
+    area_path = line_path + f" L {points[-1][0]:.2f} {height} L {points[0][0]:.2f} {height} Z"
+
+    # 등락 방향 및 색상
+    first_price = prices[0]
+    last_price = prices[-1]
+    change = last_price - first_price
+    change_pct = (change / first_price * 100) if first_price else 0
+
+    if change > 0:
+        direction = 'up'
+        color = '#f87171'  # 한국 관례: 상승 = 빨강
+        change_pct_fmt = f"+{change_pct:.1f}%"
+    elif change < 0:
+        direction = 'down'
+        color = '#60a5fa'  # 하락 = 파랑
+        change_pct_fmt = f"{change_pct:.1f}%"
+    else:
+        direction = 'flat'
+        color = '#9ca3af'
+        change_pct_fmt = "0.0%"
+
+    return {
+        'points': prices,
+        'line_path': line_path,
+        'area_path': area_path,
+        'color': color,
+        'direction': direction,
+        'change_pct_fmt': change_pct_fmt,
+        'last_x': points[-1][0],
+        'last_y': points[-1][1],
+        'start_date': dates[0],
+        'end_date': dates[-1],
+    }

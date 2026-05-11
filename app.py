@@ -5,7 +5,7 @@ import requests, zipfile, io, json, os
 import xml.etree.ElementTree as ET
 import dart_xray as engine
 from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, analyze_treasury_with_market_cap, _score_label, _score_emoji
-from stock_info import get_stock_info
+from stock_info import get_stock_info, get_chart_data
 app = Flask(__name__)
 CACHE_FILE = 'corp_list.json'
 
@@ -45,7 +45,6 @@ COMPANIES_ALL = load_corp_list()
 COMPANIES_LISTED = [c for c in COMPANIES_ALL if c['stock_code']]
 print(f"   전체 {len(COMPANIES_ALL):,}개 / 상장 {len(COMPANIES_LISTED):,}개")
 
-# 한글 → 영문/공식명 별칭 매핑 (사용자 편의)
 ALIASES = {
     '네이버': 'NAVER',
     '엘지전자': 'LG전자',
@@ -97,7 +96,6 @@ def search_companies(query, limit=15):
     if not q:
         return []
 
-    # 별칭 치환: 사용자 입력이 별칭이면 실제 기업명으로 변환
     if q in ALIASES:
         q = ALIASES[q]
 
@@ -150,7 +148,6 @@ def collect_analysis(corp_code, display_name, stock=None):
             analysis = analyze_disclosure(nm)
             rcept_no = item.get('rcept_no', '')
 
-            # CB(전환사채) 공시인 경우 자금목적 심층 분석
             cb_analysis = None
             if '전환사채' in nm or 'CB' in nm.upper():
                 try:
@@ -159,19 +156,15 @@ def collect_analysis(corp_code, display_name, stock=None):
                         cb_info = engine.parse_cb_purposes(cb_data)
                         if cb_info:
                             cb_analysis = analyze_cb_with_purposes(cb_info)
-                            # 기본 CB 점수에 자금목적 보정 반영
                             analysis['score'] += cb_analysis['score_adjust']
                             analysis['score'] = max(-10, min(10, analysis['score']))
-                            # 라벨·이모지 재계산
                             analysis['score_label'] = _score_label(analysis['score'])
                             analysis['score_emoji'] = _score_emoji(analysis['score'])
-                            # 카테고리 재결정 (강한 악재로 떨어질 수 있음)
                             if analysis['score'] <= -4:
                                 analysis['category'] = 'bad'
                 except Exception as e:
                     print(f"[CB 심층분석 오류] {e}")
 
-            # 자사주 (처분/취득) 공시인 경우 시총 대비 분석
             treasury_analysis = None
             is_disposal = '자기주식처분' in nm or '자사주처분' in nm
             is_acquisition = '자기주식취득' in nm or '자사주취득' in nm
@@ -190,11 +183,9 @@ def collect_analysis(corp_code, display_name, stock=None):
                             t_info, stock['market_cap_eok'] * 100_000_000
                         )
                         if treasury_analysis:
-                            # 기본 점수를 시총 대비로 재조정된 점수로 교체
                             analysis['score'] = treasury_analysis['final_score']
                             analysis['score_label'] = _score_label(analysis['score'])
                             analysis['score_emoji'] = _score_emoji(analysis['score'])
-                            # 카테고리 재결정
                             if analysis['score'] >= 1:
                                 analysis['category'] = 'good'
                             elif analysis['score'] <= -1:
@@ -228,22 +219,18 @@ def collect_analysis(corp_code, display_name, stock=None):
             else:
                 signals_neutral.append(signal_data)
 
-    # ========================================
-    # 배당 분석 (개선판: 자동 연도 + 100주 수령액 + 수익률 + 최신 공시)
-    # ========================================
     dividends = {
         'year': '-',
-        'per_share_now': '-',      # 당기 주당 배당
-        'per_share_prev': '-',     # 전기 주당 배당
-        'payout_now': '-',         # 당기 배당성향
-        'payout_prev': '-',        # 전기 배당성향
-        'yoy': None,               # 전년 대비 증감률 %
-        'per_share_now_int': 0,    # 계산용 정수 (100주, 수익률)
-        'amount_per_100': '-',     # 100주 보유 시 수령액
-        'yield_pct': None,         # 배당수익률 (%)
+        'per_share_now': '-',
+        'per_share_prev': '-',
+        'payout_now': '-',
+        'payout_prev': '-',
+        'yoy': None,
+        'per_share_now_int': 0,
+        'amount_per_100': '-',
+        'yield_pct': None,
     }
 
-    # 1) 자동으로 가장 최근 사업보고서 연도 찾기
     latest_year = engine.get_latest_dividend_year(corp_code)
     if latest_year:
         dividends['year'] = latest_year
@@ -263,12 +250,10 @@ def collect_analysis(corp_code, display_name, stock=None):
                         if p > 0:
                             dividends['yoy'] = round((n - p) / p * 100, 1)
 
-                        # 100주 보유 시 수령액
                         if n > 0:
                             amount = int(n * 100)
                             dividends['amount_per_100'] = f"{amount:,}원"
 
-                        # 배당수익률 (= 배당 / 현재가 * 100)
                         if n > 0 and stock and stock.get('price'):
                             yield_pct = round(n / stock['price'] * 100, 2)
                             dividends['yield_pct'] = yield_pct
@@ -278,9 +263,6 @@ def collect_analysis(corp_code, display_name, stock=None):
                     dividends['payout_now'] = item.get('thstrm', '-')
                     dividends['payout_prev'] = item.get('frmtrm', '-')
 
-    # ========================================
-    # 임원 보수 분석
-    # ========================================
     pay = engine._get('indvdlByPay.json', {
         'corp_code': corp_code, 'bsns_year': latest_year or '2024', 'reprt_code': '11011',
     })
@@ -312,13 +294,11 @@ def collect_analysis(corp_code, display_name, stock=None):
         items = cb.get('list', [])
 
         for item in items:
-            # 접수번호 앞 8자 = 접수일 (YYYYMMDD → YYYY.MM.DD)
             rcept_no = item.get('rcept_no', '')
             date = rcept_no[:8] if len(rcept_no) >= 8 else ''
             if len(date) == 8:
                 date = f"{date[:4]}.{date[4:6]}.{date[6:8]}"
 
-            # 숫자 깔끔하게 (억/만 단위)
             def fmt_won(v):
                 try:
                     s = str(v).replace(',', '').strip()
@@ -352,7 +332,6 @@ def collect_analysis(corp_code, display_name, stock=None):
     elif cb.get('status') == '013':
         cb_none = True
 
-    # 종합 점수 계산
     all_signals = signals_good + signals_bad + signals_neutral
     summary = aggregate_score(all_signals)
 
@@ -383,21 +362,29 @@ def _run_analysis(query):
             'query': query,
         }
 
-    # 주가 정보 조회 (실패해도 분석은 계속 진행)
     stock = get_stock_info(stock_code) if stock_code else None
 
     result = collect_analysis(corp_code, display_name, stock=stock)
     result['stock'] = stock
     result['stock_code'] = stock_code
-    result['query'] = query  # 공유 URL 생성에 필요
-    result['share_url_param'] = quote(display_name)  # URL 인코딩된 공유용 파라미터
+    result['query'] = query
+    result['share_url_param'] = quote(display_name)
+
+    # 주가 차트 데이터 (실패해도 계속)
+    if stock_code:
+        try:
+            result['chart'] = get_chart_data(stock_code, days=20)
+        except Exception as e:
+            print(f"[차트 수집 오류] {e}")
+            result['chart'] = None
+    else:
+        result['chart'] = None
 
     return result
 
 
 @app.route('/')
 def home():
-    # 쿼리 파라미터 ?q=삼성전자 가 있으면 자동 분석 (공유 URL 진입)
     q = request.args.get('q', '').strip()
     if q:
         result = _run_analysis(q)
@@ -418,7 +405,6 @@ def analyze():
     query = request.form.get('company', '').strip()
     if not query:
         return redirect(url_for('home'))
-    # 쿼리를 URL 파라미터로 변환해서 GET 라우트로 리다이렉트
     return redirect(url_for('home', q=query))
 
 

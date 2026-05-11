@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="DART X-RAY">
     <meta property="og:locale" content="ko_KR">
 
-    {# ===== Twitter Card (큰 이미지로 업그레이드) ===== #}
+    {# ===== Twitter Card ===== #}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}🩻 DART X-RAY{% endif %}">
     <meta name="twitter:description" content="{% if result and result.company %}{{ result.company }}의 공시를 자동 분석. VC 시각의 깊이 있는 해석.{% else %}공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진{% endif %}">
@@ -178,7 +178,6 @@
             color: #9ca3af; font-size: 13px; margin-bottom: 20px;
         }
 
-        /* ===== 탭 (강화) ===== */
         .tabs {
             display: flex; gap: 6px;
             background: #0f1419; padding: 6px;
@@ -961,6 +960,122 @@
             font-size: 11px; color: #6b7280;
             margin-top: 8px; text-align: right;
         }
+
+        /* ===== 미니 정보 박스 행 (점수 + 차트) ===== */
+        .mini-info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0 14px 0;
+        }
+        .mini-score-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #0f1419;
+            border-radius: 10px;
+            border-left: 3px solid #6b7280;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.15s ease;
+            min-width: 0;
+        }
+        .mini-score-box:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .mini-score-box.mini-score-good { border-left-color: #4ade80; }
+        .mini-score-box.mini-score-bad { border-left-color: #f87171; }
+        .mini-score-box.mini-score-neutral { border-left-color: #60a5fa; }
+
+        .mini-score-emoji {
+            font-size: 32px;
+            line-height: 1;
+        }
+        .mini-score-right {
+            flex: 1;
+            min-width: 0;
+        }
+        .mini-score-label {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .mini-score-value {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 2px;
+        }
+        .mini-score-good .mini-score-value { color: #4ade80; }
+        .mini-score-bad .mini-score-value { color: #f87171; }
+        .mini-score-neutral .mini-score-value { color: #93c5fd; }
+        .mini-score-tag {
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+        .mini-score-detail {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .mini-chart-box {
+            padding: 14px 16px;
+            background: #0f1419;
+            border-radius: 10px;
+            border-left: 3px solid #60a5fa;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+        .mini-chart-label {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+        .mini-chart-svg-wrap {
+            width: 100%;
+            height: 50px;
+        }
+        .mini-chart-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .mini-chart-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: #6b7280;
+            font-family: 'SF Mono', monospace;
+        }
+        .mini-chart-change {
+            font-weight: 700;
+            font-family: -apple-system, sans-serif;
+            font-size: 12px;
+        }
+        .mini-chart-up { color: #f87171; }
+        .mini-chart-down { color: #60a5fa; }
+        .mini-chart-flat { color: #9ca3af; }
+
+        @media (max-width: 600px) {
+            .mini-info-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .mini-score-box { padding: 12px 14px; }
+            .mini-score-emoji { font-size: 28px; }
+            .mini-score-value { font-size: 16px; }
+            .mini-chart-box { padding: 12px 14px; }
+            .mini-chart-svg-wrap { height: 45px; }
+        }
+
         .summary-card {
             padding: 28px 32px;
             border-left: 4px solid #374151;
@@ -1294,6 +1409,46 @@
                             </div>
                         </div>
                     </div>
+
+                    {# ===== 미니 정보 박스 행 (점수 + 차트) ===== #}
+                    {% if result.summary and result.summary.count > 0 %}
+                    <div class="mini-info-row">
+                        <a href="#summary-card" class="mini-score-box mini-score-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
+                            <div class="mini-score-left">
+                                <div class="mini-score-emoji">{{ result.summary.emoji }}</div>
+                            </div>
+                            <div class="mini-score-right">
+                                <div class="mini-score-label">📊 공시 점수 (30일)</div>
+                                <div class="mini-score-value">{{ result.summary.total_score_fmt }}점 <span class="mini-score-tag">{{ result.summary.label }}</span></div>
+                                <div class="mini-score-detail">호재 {{ result.summary.good_ct }} · 악재 {{ result.summary.bad_ct }} · 일반 {{ result.summary.neutral_ct }}</div>
+                            </div>
+                        </a>
+
+                        {% if result.chart and result.chart.points %}
+                        <div class="mini-chart-box">
+                            <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
+                            <div class="mini-chart-svg-wrap">
+                                <svg viewBox="0 0 300 60" preserveAspectRatio="none" class="mini-chart-svg">
+                                    <defs>
+                                        <linearGradient id="chartFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stop-color="{{ result.chart.color }}" stop-opacity="0.35"/>
+                                            <stop offset="100%" stop-color="{{ result.chart.color }}" stop-opacity="0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="{{ result.chart.area_path }}" fill="url(#chartFillGrad)" stroke="none"/>
+                                    <path d="{{ result.chart.line_path }}" fill="none" stroke="{{ result.chart.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="{{ result.chart.last_x }}" cy="{{ result.chart.last_y }}" r="3" fill="{{ result.chart.color }}"/>
+                                </svg>
+                            </div>
+                            <div class="mini-chart-meta">
+                                <span class="mini-chart-period">{{ result.chart.start_date }} → {{ result.chart.end_date }}</span>
+                                <span class="mini-chart-change mini-chart-{{ result.chart.direction }}">{{ result.chart.change_pct_fmt }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
                     <div class="stock-stats">
                         {% if result.stock.market_cap_fmt != '-' %}
                             <div class="stat-mini">
@@ -1345,7 +1500,7 @@
                 </div>
 
                 {% if result.summary and result.summary.count > 0 %}
-                <div class="card summary-card summary-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
+                <div id="summary-card" class="card summary-card summary-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
                     <div class="summary-title">📊 최근 30일 공시 종합</div>
                     <div class="summary-body">
                         <div class="summary-main">
