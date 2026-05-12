@@ -1063,7 +1063,44 @@
         .mini-chart-up { color: #f87171; }
         .mini-chart-down { color: #60a5fa; }
         .mini-chart-flat { color: #9ca3af; }
+        /* ===== 공시 0건 상태 (점수 박스) ===== */
+        .mini-score-empty {
+            border-left-color: #4b5563 !important;
+            opacity: 0.9;
+        }
+        .mini-score-empty .mini-score-emoji {
+            opacity: 0.7;
+        }
+        .mini-score-value-empty {
+            font-size: 16px;
+            font-weight: 700;
+            color: #9ca3af;
+            line-height: 1.1;
+            margin-bottom: 2px;
+        }
 
+        /* ===== 차트 데이터 없음 상태 ===== */
+        .mini-chart-empty {
+            border-left-color: #4b5563 !important;
+            opacity: 0.9;
+        }
+        .mini-chart-empty-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            height: 50px;
+        }
+        .mini-chart-empty-icon {
+            font-size: 24px;
+            opacity: 0.5;
+        }
+        .mini-chart-empty-text {
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.4;
+            text-align: left;
+        }
         @media (max-width: 600px) {
             .mini-info-row {
                 grid-template-columns: 1fr;
@@ -1410,41 +1447,64 @@
                         </div>
                     </div>
 
-                    {# ===== 미니 정보 박스 행 (점수 + 차트) ===== #}
-                    {% if result.summary and result.summary.count > 0 %}
+                    {# ===== 미니 정보 박스 행 (점수 + 차트) - 항상 표시 ===== #}
+                    {% if result.chart or result.summary %}
                     <div class="mini-info-row">
-                        <a href="#summary-card" class="mini-score-box mini-score-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
-                            <div class="mini-score-left">
-                                <div class="mini-score-emoji">{{ result.summary.emoji }}</div>
+                        {# === 공시 점수 박스 (공시 있을 때 + 없을 때 분기) === #}
+                        {% if result.summary and result.summary.count > 0 %}
+                            <a href="#summary-card" class="mini-score-box mini-score-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
+                                <div class="mini-score-left">
+                                    <div class="mini-score-emoji">{{ result.summary.emoji }}</div>
+                                </div>
+                                <div class="mini-score-right">
+                                    <div class="mini-score-label">📊 공시 점수 (30일)</div>
+                                    <div class="mini-score-value">{{ result.summary.total_score_fmt }}점 <span class="mini-score-tag">{{ result.summary.label }}</span></div>
+                                    <div class="mini-score-detail">호재 {{ result.summary.good_ct }} · 악재 {{ result.summary.bad_ct }} · 일반 {{ result.summary.neutral_ct }}</div>
+                                </div>
+                            </a>
+                        {% else %}
+                            <div class="mini-score-box mini-score-empty">
+                                <div class="mini-score-left">
+                                    <div class="mini-score-emoji">🌙</div>
+                                </div>
+                                <div class="mini-score-right">
+                                    <div class="mini-score-label">📊 공시 점수 (30일)</div>
+                                    <div class="mini-score-value-empty">공시 없음</div>
+                                    <div class="mini-score-detail">30일간 공시 0건</div>
+                                </div>
                             </div>
-                            <div class="mini-score-right">
-                                <div class="mini-score-label">📊 공시 점수 (30일)</div>
-                                <div class="mini-score-value">{{ result.summary.total_score_fmt }}점 <span class="mini-score-tag">{{ result.summary.label }}</span></div>
-                                <div class="mini-score-detail">호재 {{ result.summary.good_ct }} · 악재 {{ result.summary.bad_ct }} · 일반 {{ result.summary.neutral_ct }}</div>
-                            </div>
-                        </a>
+                        {% endif %}
 
+                        {# === 주가 차트 박스 === #}
                         {% if result.chart and result.chart.points %}
-                        <div class="mini-chart-box">
-                            <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
-                            <div class="mini-chart-svg-wrap">
-                                <svg viewBox="0 0 300 60" preserveAspectRatio="none" class="mini-chart-svg">
-                                    <defs>
-                                        <linearGradient id="chartFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stop-color="{{ result.chart.color }}" stop-opacity="0.35"/>
-                                            <stop offset="100%" stop-color="{{ result.chart.color }}" stop-opacity="0"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="{{ result.chart.area_path }}" fill="url(#chartFillGrad)" stroke="none"/>
-                                    <path d="{{ result.chart.line_path }}" fill="none" stroke="{{ result.chart.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <circle cx="{{ result.chart.last_x }}" cy="{{ result.chart.last_y }}" r="3" fill="{{ result.chart.color }}"/>
-                                </svg>
+                            <div class="mini-chart-box">
+                                <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
+                                <div class="mini-chart-svg-wrap">
+                                    <svg viewBox="0 0 300 60" preserveAspectRatio="none" class="mini-chart-svg">
+                                        <defs>
+                                            <linearGradient id="chartFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                <stop offset="0%" stop-color="{{ result.chart.color }}" stop-opacity="0.35"/>
+                                                <stop offset="100%" stop-color="{{ result.chart.color }}" stop-opacity="0"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="{{ result.chart.area_path }}" fill="url(#chartFillGrad)" stroke="none"/>
+                                        <path d="{{ result.chart.line_path }}" fill="none" stroke="{{ result.chart.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="{{ result.chart.last_x }}" cy="{{ result.chart.last_y }}" r="3" fill="{{ result.chart.color }}"/>
+                                    </svg>
+                                </div>
+                                <div class="mini-chart-meta">
+                                    <span class="mini-chart-period">{{ result.chart.start_date }} → {{ result.chart.end_date }}</span>
+                                    <span class="mini-chart-change mini-chart-{{ result.chart.direction }}">{{ result.chart.change_pct_fmt }}</span>
+                                </div>
                             </div>
-                            <div class="mini-chart-meta">
-                                <span class="mini-chart-period">{{ result.chart.start_date }} → {{ result.chart.end_date }}</span>
-                                <span class="mini-chart-change mini-chart-{{ result.chart.direction }}">{{ result.chart.change_pct_fmt }}</span>
+                        {% else %}
+                            <div class="mini-chart-box mini-chart-empty">
+                                <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
+                                <div class="mini-chart-empty-content">
+                                    <div class="mini-chart-empty-icon">📊</div>
+                                    <div class="mini-chart-empty-text">차트 데이터<br>일시적 불러올 수 없음</div>
+                                </div>
                             </div>
-                        </div>
                         {% endif %}
                     </div>
                     {% endif %}
