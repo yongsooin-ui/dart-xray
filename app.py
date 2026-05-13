@@ -398,7 +398,14 @@ def home():
         print(f"[메인 페이지 위험 공시 로딩 오류] {e}")
         risk_disclosures = []
     
-    return render_template('index.html', result=None, risk_disclosures=risk_disclosures)
+    # 공유용 OG 카드 정보 (메인 페이지)
+    share_info = {
+        'is_home': True,
+        'top_companies': [r['corp_name'] for r in risk_disclosures[:3]] if risk_disclosures else [],
+        'total_count': len(risk_disclosures),
+    }
+    
+    return render_template('index.html', result=None, risk_disclosures=risk_disclosures, share_info=share_info)
 
 
 @app.route('/search')
