@@ -6,7 +6,6 @@ import xml.etree.ElementTree as ET
 import dart_xray as engine
 from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, analyze_treasury_with_market_cap, _score_label, _score_emoji
 from stock_info import get_stock_info, get_chart_data
-from risk_scanner import get_top_risk_disclosures
 app = Flask(__name__)
 CACHE_FILE = 'corp_list.json'
 
@@ -390,15 +389,7 @@ def home():
     if q:
         result = _run_analysis(q)
         return render_template('index.html', result=result, prefill_query=q)
-    
-    # 메인 페이지: 위험 공시 TOP 5 (캐싱됨, 10분 TTL)
-    try:
-        risk_disclosures = get_top_risk_disclosures(COMPANIES_LISTED, limit=5)
-    except Exception as e:
-        print(f"[메인 페이지 위험 공시 로딩 오류] {e}")
-        risk_disclosures = []
-    
-    return render_template('index.html', result=None, risk_disclosures=risk_disclosures)
+    return render_template('index.html', result=None)
 
 
 @app.route('/search')

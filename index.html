@@ -712,140 +712,6 @@
             .disclaimer-text { font-size: 11.5px; line-height: 1.65; }
             .disclaimer-footer { font-size: 11px; }
         }
-        /* ===== 🚨 위험 공시 TOP 5 섹션 ===== */
-        .risk-section {
-            margin-bottom: 32px;
-        }
-        .risk-header {
-            margin-bottom: 16px;
-            padding: 0 4px;
-        }
-        .risk-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #e6e6e6;
-            margin-bottom: 4px;
-            letter-spacing: -0.3px;
-        }
-        .risk-subtitle {
-            font-size: 13px;
-            color: #9ca3af;
-            line-height: 1.5;
-        }
-        .risk-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .risk-card {
-            display: block;
-            padding: 18px 20px;
-            background: #1f2937;
-            border-radius: 12px;
-            border-left: 4px solid #f87171;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        .risk-card:hover {
-            transform: translateX(2px);
-            background: #232c3d;
-            box-shadow: 0 4px 16px rgba(248, 113, 113, 0.15);
-        }
-        .risk-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .risk-card-score {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .risk-card-emoji {
-            font-size: 22px;
-            line-height: 1;
-        }
-        .risk-card-points {
-            font-size: 16px;
-            font-weight: 800;
-            color: #fca5a5;
-        }
-        .risk-card-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #fca5a5;
-            padding: 2px 8px;
-            background: rgba(248, 113, 113, 0.15);
-            border-radius: 10px;
-        }
-        .risk-card-time {
-            font-size: 12px;
-            color: #6b7280;
-            font-weight: 500;
-        }
-        .risk-card-company {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-        .risk-card-name {
-            font-size: 17px;
-            font-weight: 700;
-            color: #e6e6e6;
-        }
-        .risk-card-code {
-            font-size: 12px;
-            color: #6b7280;
-            font-family: 'SF Mono', monospace;
-        }
-        .risk-card-rule {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fbbf24;
-            margin-bottom: 6px;
-        }
-        .risk-card-explain {
-            font-size: 13px;
-            color: #d1d5db;
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-        .risk-card-cta {
-            font-size: 12px;
-            font-weight: 700;
-            color: #93c5fd;
-            text-align: right;
-        }
-        .risk-footer {
-            margin-top: 14px;
-            padding: 10px 14px;
-            background: #1a1f2e;
-            border-radius: 6px;
-            font-size: 11px;
-            color: #6b7280;
-            text-align: center;
-        }
-
-        @media (max-width: 600px) {
-            .risk-title { font-size: 19px; }
-            .risk-subtitle { font-size: 12px; }
-            .risk-card { padding: 14px 16px; }
-            .risk-card-emoji { font-size: 20px; }
-            .risk-card-points { font-size: 15px; }
-            .risk-card-label { font-size: 10px; padding: 2px 6px; }
-            .risk-card-name { font-size: 15px; }
-            .risk-card-rule { font-size: 13px; }
-            .risk-card-explain { font-size: 12px; line-height: 1.55; }
-            .risk-card-cta { font-size: 11px; }
-            .risk-footer { font-size: 10px; padding: 8px 12px; }
-        }
         .landing {
             text-align: center;
             padding: 20px 0 40px;
@@ -1197,44 +1063,7 @@
         .mini-chart-up { color: #f87171; }
         .mini-chart-down { color: #60a5fa; }
         .mini-chart-flat { color: #9ca3af; }
-        /* ===== 공시 0건 상태 (점수 박스) ===== */
-        .mini-score-empty {
-            border-left-color: #4b5563 !important;
-            opacity: 0.9;
-        }
-        .mini-score-empty .mini-score-emoji {
-            opacity: 0.7;
-        }
-        .mini-score-value-empty {
-            font-size: 16px;
-            font-weight: 700;
-            color: #9ca3af;
-            line-height: 1.1;
-            margin-bottom: 2px;
-        }
 
-        /* ===== 차트 데이터 없음 상태 ===== */
-        .mini-chart-empty {
-            border-left-color: #4b5563 !important;
-            opacity: 0.9;
-        }
-        .mini-chart-empty-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            height: 50px;
-        }
-        .mini-chart-empty-icon {
-            font-size: 24px;
-            opacity: 0.5;
-        }
-        .mini-chart-empty-text {
-            font-size: 11px;
-            color: #6b7280;
-            line-height: 1.4;
-            text-align: left;
-        }
         @media (max-width: 600px) {
             .mini-info-row {
                 grid-template-columns: 1fr;
@@ -1501,43 +1330,7 @@
             </div>
             <button type="submit">분석하기</button>
         </form>
-        
         {% if not result %}
-
-        {# ===== 🚨 위험 공시 TOP 5 ===== #}
-        {% if risk_disclosures and risk_disclosures|length > 0 %}
-        <div class="risk-section">
-            <div class="risk-header">
-                <h2 class="risk-title">🚨 오늘의 위험 공시 TOP {{ risk_disclosures|length }}</h2>
-                <p class="risk-subtitle">최근 24시간 동안 발생한 가장 위험한 공시들입니다</p>
-            </div>
-            <div class="risk-list">
-                {% for r in risk_disclosures %}
-                <a href="/?q={{ r.corp_name|urlencode }}" class="risk-card">
-                    <div class="risk-card-header">
-                        <div class="risk-card-score">
-                            <span class="risk-card-emoji">{{ r.score_emoji }}</span>
-                            <span class="risk-card-points">{{ r.score }}점</span>
-                            <span class="risk-card-label">{{ r.score_label }}</span>
-                        </div>
-                        <span class="risk-card-time">{{ r.time_ago }}</span>
-                    </div>
-                    <div class="risk-card-company">
-                        <span class="risk-card-name">{{ r.corp_name }}</span>
-                        <span class="risk-card-code">{{ r.stock_code }}</span>
-                    </div>
-                    <div class="risk-card-rule">{{ r.rule_title }}</div>
-                    <div class="risk-card-explain">💡 {{ r.explain }}</div>
-                    <div class="risk-card-cta">분석 보기 →</div>
-                </a>
-                {% endfor %}
-            </div>
-            <div class="risk-footer">
-                ⏰ 10분마다 자동 업데이트 · ⚠️ 룰 베이스 자동 분석 (참고용)
-            </div>
-        </div>
-        {% endif %}
-
         <div class="landing">
             <div class="landing-tagline">
                 💡 일반 투자자를 위한, VC 시각의 공시 분석 도구
@@ -1617,64 +1410,41 @@
                         </div>
                     </div>
 
-                    {# ===== 미니 정보 박스 행 (점수 + 차트) - 항상 표시 ===== #}
-                    {% if result.chart or result.summary %}
+                    {# ===== 미니 정보 박스 행 (점수 + 차트) ===== #}
+                    {% if result.summary and result.summary.count > 0 %}
                     <div class="mini-info-row">
-                        {# === 공시 점수 박스 (공시 있을 때 + 없을 때 분기) === #}
-                        {% if result.summary and result.summary.count > 0 %}
-                            <a href="#summary-card" class="mini-score-box mini-score-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
-                                <div class="mini-score-left">
-                                    <div class="mini-score-emoji">{{ result.summary.emoji }}</div>
-                                </div>
-                                <div class="mini-score-right">
-                                    <div class="mini-score-label">📊 공시 점수 (30일)</div>
-                                    <div class="mini-score-value">{{ result.summary.total_score_fmt }}점 <span class="mini-score-tag">{{ result.summary.label }}</span></div>
-                                    <div class="mini-score-detail">호재 {{ result.summary.good_ct }} · 악재 {{ result.summary.bad_ct }} · 일반 {{ result.summary.neutral_ct }}</div>
-                                </div>
-                            </a>
-                        {% else %}
-                            <div class="mini-score-box mini-score-empty">
-                                <div class="mini-score-left">
-                                    <div class="mini-score-emoji">🌙</div>
-                                </div>
-                                <div class="mini-score-right">
-                                    <div class="mini-score-label">📊 공시 점수 (30일)</div>
-                                    <div class="mini-score-value-empty">공시 없음</div>
-                                    <div class="mini-score-detail">30일간 공시 0건</div>
-                                </div>
+                        <a href="#summary-card" class="mini-score-box mini-score-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
+                            <div class="mini-score-left">
+                                <div class="mini-score-emoji">{{ result.summary.emoji }}</div>
                             </div>
-                        {% endif %}
+                            <div class="mini-score-right">
+                                <div class="mini-score-label">📊 공시 점수 (30일)</div>
+                                <div class="mini-score-value">{{ result.summary.total_score_fmt }}점 <span class="mini-score-tag">{{ result.summary.label }}</span></div>
+                                <div class="mini-score-detail">호재 {{ result.summary.good_ct }} · 악재 {{ result.summary.bad_ct }} · 일반 {{ result.summary.neutral_ct }}</div>
+                            </div>
+                        </a>
 
-                        {# === 주가 차트 박스 === #}
                         {% if result.chart and result.chart.points %}
-                            <div class="mini-chart-box">
-                                <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
-                                <div class="mini-chart-svg-wrap">
-                                    <svg viewBox="0 0 300 60" preserveAspectRatio="none" class="mini-chart-svg">
-                                        <defs>
-                                            <linearGradient id="chartFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                <stop offset="0%" stop-color="{{ result.chart.color }}" stop-opacity="0.35"/>
-                                                <stop offset="100%" stop-color="{{ result.chart.color }}" stop-opacity="0"/>
-                                            </linearGradient>
-                                        </defs>
-                                        <path d="{{ result.chart.area_path }}" fill="url(#chartFillGrad)" stroke="none"/>
-                                        <path d="{{ result.chart.line_path }}" fill="none" stroke="{{ result.chart.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="{{ result.chart.last_x }}" cy="{{ result.chart.last_y }}" r="3" fill="{{ result.chart.color }}"/>
-                                    </svg>
-                                </div>
-                                <div class="mini-chart-meta">
-                                    <span class="mini-chart-period">{{ result.chart.start_date }} → {{ result.chart.end_date }}</span>
-                                    <span class="mini-chart-change mini-chart-{{ result.chart.direction }}">{{ result.chart.change_pct_fmt }}</span>
-                                </div>
+                        <div class="mini-chart-box">
+                            <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
+                            <div class="mini-chart-svg-wrap">
+                                <svg viewBox="0 0 300 60" preserveAspectRatio="none" class="mini-chart-svg">
+                                    <defs>
+                                        <linearGradient id="chartFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stop-color="{{ result.chart.color }}" stop-opacity="0.35"/>
+                                            <stop offset="100%" stop-color="{{ result.chart.color }}" stop-opacity="0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="{{ result.chart.area_path }}" fill="url(#chartFillGrad)" stroke="none"/>
+                                    <path d="{{ result.chart.line_path }}" fill="none" stroke="{{ result.chart.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="{{ result.chart.last_x }}" cy="{{ result.chart.last_y }}" r="3" fill="{{ result.chart.color }}"/>
+                                </svg>
                             </div>
-                        {% else %}
-                            <div class="mini-chart-box mini-chart-empty">
-                                <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
-                                <div class="mini-chart-empty-content">
-                                    <div class="mini-chart-empty-icon">📊</div>
-                                    <div class="mini-chart-empty-text">차트 데이터<br>일시적 불러올 수 없음</div>
-                                </div>
+                            <div class="mini-chart-meta">
+                                <span class="mini-chart-period">{{ result.chart.start_date }} → {{ result.chart.end_date }}</span>
+                                <span class="mini-chart-change mini-chart-{{ result.chart.direction }}">{{ result.chart.change_pct_fmt }}</span>
                             </div>
+                        </div>
                         {% endif %}
                     </div>
                     {% endif %}
@@ -2261,8 +2031,7 @@
         const loadingOverlay = document.getElementById('loadingOverlay');
         const searchForm = document.getElementById('searchForm');
 
-        // 로딩 오버레이 트리거 (검색 폼 + 위험 공시 카드 클릭 둘 다)
-        function triggerLoadingOverlay() {
+        searchForm.addEventListener('submit', () => {
             loadingOverlay.classList.add('active');
 
             setTimeout(() => {
@@ -2279,18 +2048,7 @@
                 document.getElementById('step3').classList.add('done');
                 document.getElementById('step4').classList.add('active');
             }, 5000);
-        }
-
-        // 검색 폼 제출 시
-        searchForm.addEventListener('submit', triggerLoadingOverlay);
-
-        // 위험 공시 카드 클릭 시 (메인 페이지에 있을 때만)
-        document.querySelectorAll('.risk-card').forEach(card => {
-            card.addEventListener('click', triggerLoadingOverlay);
         });
-
-        // 검색창 자동완성 클릭 시에도 (form.submit() 직접 호출하면 submit 이벤트가 안 뜨므로)
-        // → 이미 form.submit() 호출되니까 별도 처리 불필요
         const input = document.getElementById('companyInput');
         const dropdown = document.getElementById('suggestions');
         const form = document.getElementById('searchForm');

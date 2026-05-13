@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>OG Image Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #2a2a2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, 'Noto Sans KR', sans-serif;
+        }
+
+        /* 1200 x 630 = OG 표준 사이즈 */
+        .og-card {
+            width: 1200px;
+            height: 630px;
+            background: #000000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        /* X-ray 스캔라인 효과 (가로 줄무늬) */
+        .og-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(96, 165, 250, 0.03) 3px,
+                rgba(96, 165, 250, 0.03) 4px
+            );
+            pointer-events: none;
+        }
+
+        /* 격자 패턴 (X-ray 필름 그리드) */
+        .og-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(96, 165, 250, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(96, 165, 250, 0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* 가운데 빛 효과 */
+        .glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* 해골 이모지 */
+        .skull {
+            font-size: 280px;
+            line-height: 1;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+            filter: drop-shadow(0 0 40px rgba(96, 165, 250, 0.4));
+        }
+
+        /* 메인 타이틀 - 철골 느낌 */
+        .title {
+            font-size: 96px;
+            font-weight: 900;
+            letter-spacing: 8px;
+            color: #ffffff;
+            position: relative;
+            z-index: 2;
+            text-shadow:
+                0 0 20px rgba(96, 165, 250, 0.6),
+                0 0 40px rgba(96, 165, 250, 0.3),
+                0 4px 0 #2563eb,
+                0 8px 0 #1d4ed8;
+            -webkit-text-stroke: 2px rgba(96, 165, 250, 0.4);
+        }
+
+        /* 모서리 코너 마크 (X-ray 필름 느낌) */
+        .corner {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(96, 165, 250, 0.5);
+            z-index: 1;
+        }
+        .corner-tl { top: 40px; left: 40px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 40px; right: 40px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 40px; left: 40px; border-right: none; border-top: none; }
+        .corner-br { bottom: 40px; right: 40px; border-left: none; border-top: none; }
+
+        /* 작업 안내 */
+        .instructions {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            max-width: 320px;
+            line-height: 1.6;
+        }
+        .instructions strong { color: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <strong>📸 이미지 캡처 안내</strong><br>
+        1. 이 페이지를 전체 화면으로<br>
+        2. 검은 박스만 캡처 (Cmd+Shift+4)<br>
+        3. 1200x630 비율 유지<br>
+        4. PNG로 저장: <strong>og-image.png</strong>
+    </div>
+
+    <div class="og-card">
+        <div class="glow"></div>
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <div class="skull">🩻</div>
+        <div class="title">DART X-RAY</div>
+    </div>
+</body>
+</html>
