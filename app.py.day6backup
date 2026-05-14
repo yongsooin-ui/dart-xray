@@ -4,7 +4,7 @@ from urllib.parse import quote
 import requests, zipfile, io, json, os
 import xml.etree.ElementTree as ET
 import dart_xray as engine
-from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, analyze_treasury_with_market_cap, _score_label, _score_emoji, generate_conclusion
+from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, analyze_treasury_with_market_cap, _score_label, _score_emoji
 from stock_info import get_stock_info, get_chart_data
 from risk_scanner import get_top_risk_disclosures
 app = Flask(__name__)
@@ -380,13 +380,6 @@ def _run_analysis(query):
             result['chart'] = None
     else:
         result['chart'] = None
-
-    # 결론 카드 데이터 생성 (두괄식 종합 해석)
-    try:
-        result['conclusion'] = generate_conclusion(result)
-    except Exception as e:
-        print(f"[결론 카드 생성 오류] {e}")
-        result['conclusion'] = None
 
     return result
 
