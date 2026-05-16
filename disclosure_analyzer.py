@@ -50,9 +50,10 @@ RULES = [
     },
     {
         'keywords': ['영업(잠정)실적', '매출액또는손익구조30%', '영업실적등에대한전망'],
-        'score': 4, 'category': 'good',
+        'score': 0, 'category': 'neutral',
         'title': '실적 공시',
-        'explain': '회사의 매출·영업이익 등을 발표하는 공시입니다. 전년 동기 대비 증감이 핵심이며, 30% 이상 변동 시 의무적으로 알리게 되어 있습니다. 숫자가 시장 예상치(컨센서스)보다 높으면 호재입니다.',
+        'explain': '회사의 매출·영업이익 등을 발표하는 공시입니다. 실제 호재/악재 여부는 본문의 매출·영업이익 숫자 (전년 동기 대비)로 판단됩니다. 분석 결과는 결론 카드에서 확인하세요.',
+        'needs_deep_analysis': True,  # 심층 분석 필요 플래그
     },
 
     # ══════════════════════════════════════
@@ -681,6 +682,190 @@ def analyze_treasury_with_market_cap(treasury_info, market_cap):
 # ============================================================
 # 결론 카드 생성 (두괄식 종합 해석)
 # ============================================================
+# ==========================================
+# 실적 공시 심층 분석 (옵션 B)
+# ==========================================
+
+def analyze_performance_score(performance):
+    """
+    실적 데이터를 점수로 변환.
+    
+    Args:
+        performance: dart_xray.get_performance_analysis()의 반환값
+    
+    Returns:
+        dict: {
+            'score': 종합 점수 (-8 ~ +5),
+            'label': 라벨,
+            'emoji': 이모지,
+            'rule_title': 룰 제목,
+            'explain': 설명 메시지,
+            'revenue_score': 매출 점수,
+            'op_profit_score': 영업이익 점수,
+            'has_analysis': True/False,
+        }
+    """
+    if not performance or not performance.get('has_data'):
+        return None
+    
+    revenue = performance.get('revenue', {})
+    op_profit = performance.get('op_profit', {})
+    
+    # ==========================================
+    # 1. 매출 점수
+    # ==========================================
+    revenue_score = 0
+    revenue_msg = ''
+    rev_pct = revenue.get('yoy_pct')
+    
+    if rev_pct is not None:
+        if rev_pct <= -50:
+            revenue_score = -8
+            revenue_msg = f"매출 {rev_pct:.1f}% 급감 🚨"
+        elif rev_pct <= -20:
+            revenue_score = -4
+            revenue_msg = f"매출 {rev_pct:.1f}% 감소 ⚠️"
+        elif rev_pct <= -5:
+            revenue_score = -2
+            revenue_msg = f"매출 {rev_pct:.1f}% 소폭 감소"
+        elif rev_pct < 5:
+            revenue_score = 0
+            revenue_msg = f"매출 {rev_pct:+.1f}% (보합)"
+        elif rev_pct < 20:
+            revenue_score = 2
+            revenue_msg = f"매출 {rev_pct:+.1f}% 소폭 증가 📈"
+        elif rev_pct < 50:
+            revenue_score = 3
+            revenue_msg = f"매출 {rev_pct:+.1f}% 증가 📈"
+        else:
+            revenue_score = 5
+            revenue_msg = f"매출 {rev_pct:+.1f}% 급증 🚀"
+    
+    # ==========================================
+    # 2. 영업이익 점수
+    # ==========================================
+    op_score = 0
+    op_msg = ''
+    op_pct = op_profit.get('yoy_pct')
+    op_turn = op_profit.get('turn')
+    
+    # 흑자/적자 전환은 최우선
+    if op_turn == 'to_loss':
+        op_score = -8
+        op_msg = "영업이익 적자전환 🚨"
+    elif op_turn == 'to_profit':
+        op_score = 5
+        op_msg = "영업이익 흑자전환 🎉"
+    elif op_pct is not None:
+        if op_pct <= -50:
+            op_score = -6
+            op_msg = f"영업이익 {op_pct:.1f}% 급감 🚨"
+        elif op_pct <= -20:
+            op_score = -3
+            op_msg = f"영업이익 {op_pct:.1f}% 감소 ⚠️"
+        elif op_pct <= -5:
+            op_score = -2
+            op_msg = f"영업이익 {op_pct:.1f}% 소폭 감소"
+        elif op_pct < 5:
+            op_score = 0
+            op_msg = f"영업이익 {op_pct:+.1f}% (보합)"
+        elif op_pct < 20:
+            op_score = 2
+            op_msg = f"영업이익 {op_pct:+.1f}% 소폭 증가 📈"
+        elif op_pct < 50:
+            op_score = 3
+            op_msg = f"영업이익 {op_pct:+.1f}% 증가 📈"
+        else:
+            op_score = 5
+            op_msg = f"영업이익 {op_pct:+.1f}% 급증 🚀"
+    
+    # ==========================================
+    # 3. 종합 점수 (매출 + 영업이익 평균, 영업이익에 가중치)
+    # ==========================================
+    if rev_pct is not None and op_pct is not None:
+        # 둘 다 있으면: 영업이익 60% + 매출 40%
+        final_score = op_score * 0.6 + revenue_score * 0.4
+    elif op_pct is not None or op_turn:
+        # 영업이익만 있으면
+        final_score = op_score
+    elif rev_pct is not None:
+        # 매출만 있으면
+        final_score = revenue_score
+    else:
+        return None
+    
+    final_score = round(final_score, 1)
+    
+    # ==========================================
+    # 4. 라벨 + 이모지 + 룰 제목 + 설명
+    # ==========================================
+    if final_score <= -7:
+        label = '실적 매우 부진'
+        emoji = '🚨'
+        rule_title = '실적 매우 부진'
+    elif final_score <= -3:
+        label = '실적 부진'
+        emoji = '⚠️'
+        rule_title = '실적 부진'
+    elif final_score <= -1:
+        label = '실적 다소 부진'
+        emoji = '😟'
+        rule_title = '실적 다소 부진'
+    elif final_score < 1.5:
+        label = '실적 보합'
+        emoji = '➖'
+        rule_title = '실적 보합'
+    elif final_score < 4:
+        label = '실적 양호'
+        emoji = '📈'
+        rule_title = '실적 양호'
+    else:
+        label = '실적 우수'
+        emoji = '🚀'
+        rule_title = '실적 우수'
+    
+    # 설명 메시지 조합
+    parts = []
+    if revenue_msg:
+        parts.append(revenue_msg)
+    if op_msg:
+        parts.append(op_msg)
+    
+    if parts:
+        explain = ' · '.join(parts)
+    else:
+        explain = '실적 데이터 분석 불가'
+    
+    return {
+        'score': final_score,
+        'label': label,
+        'emoji': emoji,
+        'rule_title': rule_title,
+        'explain': explain,
+        'revenue_score': revenue_score,
+        'op_profit_score': op_score,
+        'revenue_msg': revenue_msg,
+        'op_profit_msg': op_msg,
+        'has_analysis': True,
+        'revenue_pct': rev_pct,
+        'op_profit_pct': op_pct,
+        'op_profit_turn': op_turn,
+    }
+
+
+def format_amount_korean(amount):
+    """금액을 한국식 단위로 변환 (조/억)."""
+    if amount is None:
+        return '-'
+    
+    if abs(amount) >= 1_000_000_000_000:  # 1조 이상
+        return f'{amount / 1_000_000_000_000:.1f}조원'
+    elif abs(amount) >= 100_000_000:  # 1억 이상
+        return f'{amount / 100_000_000:.0f}억원'
+    elif abs(amount) >= 10_000:  # 1만 이상
+        return f'{amount / 10_000:.0f}만원'
+    else:
+        return f'{amount:,}원'
 
 def generate_conclusion(result_data):
     """
@@ -839,7 +1024,7 @@ def _generate_headline(total_score, score_count, signals_good, signals_bad, char
 
 
 def _extract_good_signals(signals_good, dividends, cb_none):
-    """좋은 신호 추출 (최대 3개)."""
+    """좋은 신호 추출 (최대 3개) - 일반 투자자 친화적 메시지."""
     result = []
     
     # 1. 호재 공시 TOP 2 (점수 높은 순)
@@ -847,6 +1032,43 @@ def _extract_good_signals(signals_good, dividends, cb_none):
     for sig in sorted_good[:2]:
         rule_title = sig.get('rule_title', '')
         score = sig.get('score', 0)
+        
+        # 실적 분석 결과 활용 (가장 우선)
+        if sig.get('performance_analysis'):
+            p = sig['performance_analysis']
+            rev_pct = p.get('revenue_pct')
+            op_pct = p.get('op_profit_pct')
+            op_turn = p.get('op_profit_turn')
+            
+            # 친근한 메시지 생성
+            parts = []
+            if rev_pct is not None:
+                if rev_pct > 0:
+                    parts.append(f"매출 +{rev_pct:.0f}%")
+                else:
+                    parts.append(f"매출 {rev_pct:.0f}%")
+            if op_turn == 'to_profit':
+                parts.append("영업이익 흑자전환 🎉")
+            elif op_pct is not None:
+                if op_pct > 0:
+                    parts.append(f"영업이익 +{op_pct:.0f}%")
+                else:
+                    parts.append(f"영업이익 {op_pct:.0f}%")
+            
+            metrics = ", ".join(parts)
+            
+            # 일반인 해석 추가
+            if op_turn == 'to_profit':
+                interp = "적자에서 흑자로 돌아섰어요 🚀"
+            elif p.get('score', 0) >= 4:
+                interp = "작년보다 훨씬 잘 벌고 있어요 🚀"
+            elif p.get('score', 0) >= 2:
+                interp = "작년보다 잘 벌고 있어요 📈"
+            else:
+                interp = "작년과 비슷한 흐름"
+            
+            result.append(f"{rule_title}: {metrics} → {interp}")
+            continue
         
         # 시총 대비 자사주 분석 결과 활용
         if sig.get('treasury_analysis'):
@@ -856,26 +1078,49 @@ def _extract_good_signals(signals_good, dividends, cb_none):
                 result.append(f"{rule_title} ({summary_text})")
                 continue
         
-        result.append(f"{rule_title} (+{score}점)")
+        # 친근한 룰별 메시지
+        friendly_msg = _get_friendly_good_message(rule_title, score)
+        if friendly_msg:
+            result.append(friendly_msg)
+        else:
+            result.append(f"{rule_title} (+{score}점)")
     
     # 2. 배당 정보 (양호하면 추가)
     if dividends and dividends.get('amount_per_100') and dividends.get('amount_per_100') != '-':
         yoy = dividends.get('yoy')
         amount = dividends.get('amount_per_100', '')
         if yoy is not None and yoy > 0:
-            result.append(f"배당 +{yoy}% 증가, 100주 보유 시 연 {amount} 수령")
+            result.append(f"배당 +{yoy}% 증가 → 100주 보유 시 연 {amount} 수령 💰")
         elif amount:
-            result.append(f"배당 안정적 지급 (100주 = {amount})")
+            result.append(f"안정적인 배당 지급 (100주 보유 시 연 {amount}) 💰")
     
     # 3. 전환사채 없음 (재무 자신감)
     if cb_none and len(result) < 3:
-        result.append("최근 3년간 전환사채 발행 없음 (재무 자신감)")
+        result.append("최근 3년간 전환사채 발행 없음 → 회사가 빚 없이 운영 중 ✨")
     
     return result[:3]
 
 
+def _get_friendly_good_message(rule_title, score):
+    """호재 룰을 일반인이 이해하기 쉬운 메시지로 변환."""
+    friendly_map = {
+        '자사주 소각 결정': '자사주 소각 → 내 주식 가치가 올라가는 가장 강한 주주환원 💎',
+        '자사주 취득 결정': '회사가 자기 주식 매입 → 주가 방어 신호 🛡️',
+        '자사주 취득 신탁 체결': '자사주 신탁 매입 → 주가 방어 의지 표시 🛡️',
+        '무상증자 결정': '무상증자 → 회사가 재무 자신감 표시 (내 주식 수 증가) 🎁',
+        '대규모 수주·공급계약': '굵직한 매출처 확보 → 향후 실적 기대감 ↑ 📦',
+        '현금 배당 결정': '현금 배당 결정 → 주주에게 현금 환원 💵',
+        '주식 배당 결정': '주식으로 배당 → 보유 주식 수 증가 🎁',
+        '액면분할 결정': '주가 낮춰서 거래 활성화 시도 (개인 접근성 ↑) ✂️',
+    }
+    
+    if rule_title in friendly_map:
+        return friendly_map[rule_title]
+    return None
+
+
 def _extract_warning_signals(signals_bad, cbs):
-    """주의할 점 추출 (최대 3개)."""
+    """주의할 점 추출 (최대 3개) - 일반 투자자 친화적 메시지."""
     result = []
     
     # 1. 악재 공시 TOP 3 (점수 낮은 순)
@@ -884,6 +1129,43 @@ def _extract_warning_signals(signals_bad, cbs):
     for sig in sorted_bad[:3]:
         rule_title = sig.get('rule_title', '')
         score = sig.get('score', 0)
+        
+        # 실적 분석 결과 활용 (가장 우선)
+        if sig.get('performance_analysis'):
+            p = sig['performance_analysis']
+            rev_pct = p.get('revenue_pct')
+            op_pct = p.get('op_profit_pct')
+            op_turn = p.get('op_profit_turn')
+            
+            # 친근한 메시지 생성
+            parts = []
+            if rev_pct is not None:
+                if rev_pct > 0:
+                    parts.append(f"매출 +{rev_pct:.0f}%")
+                else:
+                    parts.append(f"매출 {rev_pct:.0f}%")
+            if op_turn == 'to_loss':
+                parts.append("영업이익 적자전환 🚨")
+            elif op_pct is not None:
+                if op_pct > 0:
+                    parts.append(f"영업이익 +{op_pct:.0f}%")
+                else:
+                    parts.append(f"영업이익 {op_pct:.0f}%")
+            
+            metrics = ", ".join(parts)
+            
+            # 일반인 해석 추가
+            if op_turn == 'to_loss':
+                interp = "흑자에서 적자로 떨어졌어요. 보유 시 주의 ⚠️"
+            elif p.get('score', 0) <= -7:
+                interp = "실적이 크게 악화됐어요. 즉시 확인 필요 🚨"
+            elif p.get('score', 0) <= -3:
+                interp = "작년보다 사업이 부진해요"
+            else:
+                interp = "약간 부진하지만 큰 위험은 아님"
+            
+            result.append(f"{rule_title}: {metrics} → {interp}")
+            continue
         
         # CB 자금목적 분석 결과 활용
         if sig.get('cb_analysis'):
@@ -901,15 +1183,45 @@ def _extract_warning_signals(signals_bad, cbs):
                 result.append(f"{rule_title} ({summary_text})")
                 continue
         
-        result.append(f"{rule_title} ({score}점)")
+        # 친근한 룰별 메시지
+        friendly_msg = _get_friendly_bad_message(rule_title, score)
+        if friendly_msg:
+            result.append(friendly_msg)
+        else:
+            result.append(f"{rule_title} ({score}점)")
     
     # 2. 위험한 CB 이력 (운영자금 포함된 CB 있으면 경고)
     if cbs and len(result) < 3:
         warn_cbs = [cb for cb in cbs if cb.get('warn')]
         if warn_cbs:
-            result.append(f"최근 3년간 운영자금 포함 CB 발행 {len(warn_cbs)}건 (자금난 이력)")
+            result.append(f"최근 3년간 운영자금 목적 전환사채 {len(warn_cbs)}건 → 회사가 돈이 부족했던 이력 ⚠️")
     
     return result[:3]
+
+
+def _get_friendly_bad_message(rule_title, score):
+    """악재 룰을 일반인이 이해하기 쉬운 메시지로 변환."""
+    friendly_map = {
+        '횡령·배임 혐의 발생': '횡령·배임 혐의 발생 → 거래정지·상장폐지 위험 매우 큼 🚨',
+        '감자(자본 감소) 결정': '감자 결정 → 내 주식 수가 강제로 줄어듦. 재무 위기 신호 🚨',
+        '거래정지·상장폐지 위험': '거래정지·상장폐지 위험 → 주식이 휴지조각 될 수 있음 🚨',
+        '회생·파산 관련': '회생절차/파산 → 주식 가치 거의 사라질 수 있는 최악 🚨',
+        '유상증자 결정': '유상증자 결정 → 신주 발행으로 내 주식 가치 희석 가능 ⚠️',
+        '재무제표 정정·재작성': '재무제표 정정 → 회계 신뢰성에 의문 ⚠️',
+        '감사의견 문제': '감사의견 문제 → 상장폐지 사유 가능성 🚨',
+        '자사주 처분 결정': '자사주 처분 → 유통 주식 증가, 수급 부담 ⚠️',
+        '전환사채(CB) 발행': '전환사채 발행 → 나중에 주식으로 바뀔 수 있는 잠재 희석 ⚠️',
+        '신주인수권부사채(BW) 발행': 'BW 발행 → 잠재적 지분 희석 가능성 ⚠️',
+        '교환사채(EB) 발행': '교환사채 발행 → 잠재적 물량 부담 ⚠️',
+        '물적분할 결정': '물적분할 → 알짜 사업부 분리, 한국에서 비판 많은 구조 ⚠️',
+        '소송 관련': '대규모 소송 발생 → 실적·이미지 타격 가능 ⚠️',
+        '관리종목·투자주의 지정': '관리종목 지정 → 거래소가 공식 경고. 개선 안 되면 상장폐지 위험 🚨',
+        '최대주주 관련 변동': '최대주주 변동/담보 → 경영 방향 변경 또는 반대매매 위험 ⚠️',
+    }
+    
+    if rule_title in friendly_map:
+        return friendly_map[rule_title]
+    return None
 
 
 def _extract_context_info(summary, chart, dividends, stock):

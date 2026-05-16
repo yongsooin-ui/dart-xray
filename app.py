@@ -4,9 +4,9 @@ from urllib.parse import quote
 import requests, zipfile, io, json, os
 import xml.etree.ElementTree as ET
 import dart_xray as engine
-from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, analyze_treasury_with_market_cap, _score_label, _score_emoji, generate_conclusion
+from disclosure_analyzer import analyze_disclosure, aggregate_score, analyze_cb_with_purposes, analyze_treasury_with_market_cap, analyze_performance_score, _score_label, _score_emoji, generate_conclusion
 from stock_info import get_stock_info, get_chart_data
-from risk_scanner import get_top_risk_disclosures
+from risk_scanner import get_top_risk_disclosures, get_top_good_disclosures
 app = Flask(__name__)
 CACHE_FILE = 'corp_list.json'
 
@@ -166,6 +166,48 @@ def collect_analysis(corp_code, display_name, stock=None):
                 except Exception as e:
                     print(f"[CB 심층분석 오류] {e}")
 
+            # ==========================================
+            # 실적 공시 심층 분석 (옵션 B)
+            # ==========================================
+            performance_analysis = None
+            is_performance = ('영업(잠정)실적' in nm or 
+                             '매출액또는손익구조30%' in nm or 
+                             '영업실적등에대한전망' in nm or
+                             '분기보고서' in nm or
+                             '반기보고서' in nm or
+                             '사업보고서' in nm)
+            
+            if is_performance:
+                try:
+                    perf_data = engine.get_performance_analysis(corp_code, item['rcept_dt'])
+                    if perf_data:
+                        performance_analysis = analyze_performance_score(perf_data)
+                        if performance_analysis and performance_analysis.get('has_analysis'):
+                            # 점수 업데이트
+                            analysis['score'] = int(round(performance_analysis['score']))
+                            analysis['score_label'] = _score_label(analysis['score'])
+                            analysis['score_emoji'] = _score_emoji(analysis['score'])
+                            
+                            # 룰 제목도 동적으로 업데이트
+                            analysis['rule_title'] = performance_analysis['rule_title']
+                            
+                            # 설명 메시지를 분석 결과로 교체
+                            performance_analysis['report_label'] = perf_data.get('report_label', '')
+                            analysis['explain'] = (
+                                f"{performance_analysis['explain']} "
+                                f"(기준: {perf_data.get('report_label', '최근 보고서')})"
+                            )
+                            
+                            # 카테고리 결정
+                            if analysis['score'] >= 1.5:
+                                analysis['category'] = 'good'
+                            elif analysis['score'] <= -1.5:
+                                analysis['category'] = 'bad'
+                            else:
+                                analysis['category'] = 'neutral'
+                except Exception as e:
+                    print(f"[실적 심층분석 오류] {e}")
+
             treasury_analysis = None
             is_disposal = '자기주식처분' in nm or '자사주처분' in nm
             is_acquisition = '자기주식취득' in nm or '자사주취득' in nm
@@ -208,6 +250,7 @@ def collect_analysis(corp_code, display_name, stock=None):
                 'dart_url': f'https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}' if rcept_no else '',
                 'cb_analysis': cb_analysis,
                 'treasury_analysis': treasury_analysis,
+                'performance_analysis': performance_analysis,
             }
 
             if analysis['category'] in ('good', 'bad'):
@@ -393,6 +436,36 @@ def _run_analysis(query):
 
 @app.route('/')
 def home():
+    q = request.args.get('q', '').strip()
+    if q:
+        result = _run_analysis(q)
+        return render_template('index.html', result=result, prefill_query=q)
+    
+    # 메인 페이지: 위험 + 호재 공시 TOP 5 (캐싱됨, 10분 TTL)
+    try:
+        risk_disclosures = get_top_risk_disclosures(COMPANIES_LISTED, limit=5)
+    except Exception as e:
+        print(f"[메인 페이지 위험 공시 로딩 오류] {e}")
+        risk_disclosures = []
+    
+    try:
+        good_disclosures = get_top_good_disclosures(COMPANIES_LISTED, limit=5)
+    except Exception as e:
+        print(f"[메인 페이지 호재 공시 로딩 오류] {e}")
+        good_disclosures = []
+    
+    # 공유용 OG 카드 정보 (메인 페이지)
+    share_info = {
+        'is_home': True,
+        'top_companies': [r['corp_name'] for r in risk_disclosures[:3]] if risk_disclosures else [],
+        'total_count': len(risk_disclosures),
+    }
+    
+    return render_template('index.html', 
+                          result=None, 
+                          risk_disclosures=risk_disclosures,
+                          good_disclosures=good_disclosures,
+                          share_info=share_info)
     q = request.args.get('q', '').strip()
     if q:
         result = _run_analysis(q)

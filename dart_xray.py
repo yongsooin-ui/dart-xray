@@ -532,5 +532,292 @@ def get_latest_dividend_year(corp_code):
                         return year
     return None
 
+
+# ==========================================
+# 실적 분석 (v1.0 옵션 B)
+# ==========================================
+
+def get_financial_statements(corp_code, year, reprt_code='11011', fs_div='CFS'):
+    """
+    DART 재무제표 API 호출 (단일회사 전체 재무제표).
+
+    Args:
+        corp_code: 8자리 기업 고유번호
+        year: 사업연도 (예: '2025')
+        reprt_code: 보고서 코드 (11011=사업, 11012=반기, 11013=1분기, 11014=3분기)
+        fs_div: CFS=연결, OFS=별도
+
+    Returns:
+        list or None: 재무제표 항목 리스트 (각 항목은 dict)
+    """
+    try:
+        data = _get('fnlttSinglAcntAll.json', {
+            'corp_code': corp_code,
+            'bsns_year': year,
+            'reprt_code': reprt_code,
+            'fs_div': fs_div,
+        })
+        
+        if data.get('status') == '000':
+            return data.get('list', [])
+        
+        # 연결 재무제표 없으면 별도로 재시도
+        if fs_div == 'CFS' and data.get('status') == '013':
+            return get_financial_statements(corp_code, year, reprt_code, 'OFS')
+        
+        return None
+    except Exception as e:
+        print(f"[재무제표 API 오류] {e}")
+        return None
+
+
+def parse_performance_numbers(fin_data):
+    """
+    재무제표에서 매출/영업이익 추출 + 전년 동기 대비 증감률 계산.
+    
+    업종별로 매출 항목명이 다르므로 우선순위 매칭 사용:
+    - 일반 제조/서비스: '매출액'
+    - 금융업: '영업수익'
+    - 지주회사: '수익' 또는 '영업수익'
+    - 기타: '수익(매출액)'
+
+    Args:
+        fin_data: get_financial_statements의 반환값
+
+    Returns:
+        dict or None: {
+            'revenue': {'curr': 당기, 'prev': 전기, 'yoy_pct': 증감률, 'item_name': 항목명},
+            'op_profit': {'curr': 당기, 'prev': 전기, 'yoy_pct': 증감률, 'turn': 'to_profit'|'to_loss'|None, 'item_name': 항목명},
+            'has_data': True/False,
+        }
+    """
+    if not fin_data:
+        return None
+
+    def to_int(val):
+        if not val or val in ['-', '', None]:
+            return None
+        try:
+            s = str(val).replace(',', '').replace(' ', '').strip()
+            if s in ['', '-']:
+                return None
+            return int(float(s))
+        except (ValueError, TypeError):
+            return None
+
+    # 우선순위 매칭: 가장 명확한 이름부터 매칭 시도
+    # account_nm은 정확히 일치해야 함 (부분 매칭 안 함 - "매출원가" 같은 거 제외)
+    revenue_priority = [
+        '매출액',          # 1순위: 일반 제조/서비스
+        '수익(매출액)',     # 2순위: 일부 IFRS 표시
+        '영업수익',         # 3순위: 금융업, 지주회사, 리츠
+        '수익',            # 4순위: 일부 지주회사
+    ]
+    
+    op_profit_priority = [
+        '영업이익',           # 1순위: 일반
+        '영업이익(손실)',     # 2순위: 일부 IFRS 표시
+        '영업손실',           # 3순위: 적자 기업
+    ]
+
+    # 손익계산서 항목만 인덱싱 (account_nm → item)
+    is_items = {}
+    for item in fin_data:
+        sj_div = item.get('sj_div', '')
+        if sj_div not in ['IS', 'CIS']:
+            continue
+        nm = item.get('account_nm', '').strip()
+        # 동일한 account_nm이 여러 개면 IS 우선
+        if nm not in is_items or sj_div == 'IS':
+            is_items[nm] = item
+
+    # 매출 항목 찾기 (1순위: 정확 일치, 2순위: 부분 일치)
+    revenue_item = None
+    revenue_item_name = None
+    
+    # 1단계: 정확 일치
+    for name in revenue_priority:
+        if name in is_items:
+            revenue_item = is_items[name]
+            revenue_item_name = name
+            break
+    
+    # 2단계: 부분 일치 (앞에 번호 prefix가 붙은 경우 등)
+    # 예: "I. 영업수익", "1. 매출액"
+    # 우선순위 순서대로 모든 항목 확인 (먼저 매칭된 우선순위가 이김)
+    if revenue_item is None:
+        excluded_names = ['매출원가', '매출총이익', '판매비와관리비', '판매관리비',
+                         '기타수익', '금융수익', '투자수익', '운용투자수익',
+                         '기타영업수익', '투자조합수익']
+        
+        for priority_name in revenue_priority:
+            for stored_name, item in is_items.items():
+                # 제외 단어 포함되어 있으면 스킵
+                if any(ex in stored_name for ex in excluded_names):
+                    continue
+                # 끝부분이 정확 일치 (예: "I. 영업수익" → "영업수익")
+                if stored_name.endswith(priority_name):
+                    revenue_item = item
+                    revenue_item_name = priority_name
+                    break
+            if revenue_item:
+                break
+
+    # 영업이익 항목 찾기 (동일한 패턴)
+    op_profit_item = None
+    op_profit_item_name = None
+    
+    # 1단계: 정확 일치
+    for name in op_profit_priority:
+        if name in is_items:
+            op_profit_item = is_items[name]
+            op_profit_item_name = name
+            break
+    
+    # 2단계: 부분 일치
+    if op_profit_item is None:
+        for stored_name, item in is_items.items():
+            for priority_name in op_profit_priority:
+                if priority_name in stored_name:
+                    # 끝부분이 정확 일치하거나 "(손실)"이 붙은 경우
+                    if (stored_name.endswith(priority_name) or 
+                        stored_name.endswith(f'{priority_name}(손실)') or
+                        f'{priority_name}(' in stored_name):
+                        op_profit_item = item
+                        op_profit_item_name = priority_name
+                        break
+            if op_profit_item:
+                break
+
+    revenue_curr = None
+    revenue_prev = None
+    if revenue_item:
+        revenue_curr = to_int(revenue_item.get('thstrm_amount'))
+        # 전년 동기 우선 (frmtrm_q_amount), 없으면 전기 (frmtrm_amount)
+        revenue_prev = to_int(revenue_item.get('frmtrm_q_amount')) or to_int(revenue_item.get('frmtrm_amount'))
+
+    op_profit_curr = None
+    op_profit_prev = None
+    if op_profit_item:
+        op_profit_curr = to_int(op_profit_item.get('thstrm_amount'))
+        op_profit_prev = to_int(op_profit_item.get('frmtrm_q_amount')) or to_int(op_profit_item.get('frmtrm_amount'))
+
+    # 둘 다 못 찾았으면 실패
+    if revenue_curr is None and op_profit_curr is None:
+        return None
+
+    # 매출 증감률
+    revenue_yoy = None
+    if revenue_curr is not None and revenue_prev not in [None, 0]:
+        revenue_yoy = round((revenue_curr - revenue_prev) / abs(revenue_prev) * 100, 1)
+
+    # 영업이익 증감률 + 흑자/적자 전환 감지
+    op_yoy = None
+    op_turn = None
+    if op_profit_curr is not None and op_profit_prev is not None:
+        # 적자 ↔ 흑자 전환 감지
+        if op_profit_prev > 0 and op_profit_curr < 0:
+            op_turn = 'to_loss'  # 흑자 → 적자 (악재)
+        elif op_profit_prev < 0 and op_profit_curr > 0:
+            op_turn = 'to_profit'  # 적자 → 흑자 (호재)
+        elif op_profit_prev != 0:
+            op_yoy = round((op_profit_curr - op_profit_prev) / abs(op_profit_prev) * 100, 1)
+
+    return {
+        'revenue': {
+            'curr': revenue_curr,
+            'prev': revenue_prev,
+            'yoy_pct': revenue_yoy,
+            'item_name': revenue_item_name,  # '매출액' / '영업수익' / '수익' 등
+        },
+        'op_profit': {
+            'curr': op_profit_curr,
+            'prev': op_profit_prev,
+            'yoy_pct': op_yoy,
+            'turn': op_turn,
+            'item_name': op_profit_item_name,
+        },
+        'has_data': True,
+    }
+
+
+def get_performance_analysis(corp_code, rcept_dt):
+    """
+    공시 접수일 기준 가장 적절한 재무제표를 자동으로 가져와 분석.
+
+    Args:
+        corp_code: 8자리 기업 고유번호
+        rcept_dt: 공시 접수일 (YYYYMMDD)
+
+    Returns:
+        dict or None: parse_performance_numbers의 반환값 + 추가 정보
+    """
+    try:
+        # 공시 접수일에서 연도/월 추출
+        if not rcept_dt or len(rcept_dt) != 8:
+            return None
+        
+        year = int(rcept_dt[:4])
+        month = int(rcept_dt[4:6])
+        
+        # 접수 시점에 따라 적절한 보고서 코드 결정
+        # 1~3월: 작년 사업보고서 (11011)
+        # 4~5월: 1분기 (11013)
+        # 6~8월: 반기 (11012)
+        # 9~11월: 3분기 (11014)
+        # 12월: 3분기 또는 사업보고서
+        if month <= 3:
+            target_year = str(year - 1)
+            reprt_code = '11011'
+            reprt_label = '사업보고서'
+        elif month <= 5:
+            target_year = str(year)
+            reprt_code = '11013'
+            reprt_label = '1분기보고서'
+        elif month <= 8:
+            target_year = str(year)
+            reprt_code = '11012'
+            reprt_label = '반기보고서'
+        elif month <= 11:
+            target_year = str(year)
+            reprt_code = '11014'
+            reprt_label = '3분기보고서'
+        else:
+            target_year = str(year)
+            reprt_code = '11014'
+            reprt_label = '3분기보고서'
+        
+        # 재무제표 가져오기
+        fin_data = get_financial_statements(corp_code, target_year, reprt_code)
+        
+        # 실패 시 이전 보고서 시도
+        if not fin_data:
+            # 1분기 → 작년 사업보고서로 폴백
+            if reprt_code == '11013':
+                fin_data = get_financial_statements(corp_code, str(year - 1), '11011')
+                reprt_label = f'{year-1}년 사업보고서'
+            # 반기 → 1분기로 폴백
+            elif reprt_code == '11012':
+                fin_data = get_financial_statements(corp_code, target_year, '11013')
+                reprt_label = '1분기보고서'
+            # 3분기 → 반기로 폴백
+            elif reprt_code == '11014':
+                fin_data = get_financial_statements(corp_code, target_year, '11012')
+                reprt_label = '반기보고서'
+        
+        if not fin_data:
+            return None
+        
+        result = parse_performance_numbers(fin_data)
+        if result:
+            result['report_label'] = reprt_label
+            result['report_year'] = target_year
+        
+        return result
+    except Exception as e:
+        print(f"[실적 분석 오류] {e}")
+        return None
+
+
 if __name__ == "__main__":
     run_xray('삼성전자')

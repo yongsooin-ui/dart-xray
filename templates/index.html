@@ -6,7 +6,6 @@
     <title>{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}DART X-RAY · 공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진{% endif %}</title>
     <meta name="description" content="{% if result and result.company %}{{ result.company }}의 최근 30일 공시, 배당, 임원 보수, 전환사채 이력을 한눈에. VC 시각의 자동 분석.{% else %}공시 50개+ 자동 해석. 자금목적·시총 대비 심층 분석. 100주 보유 시 배당 수령액까지. VC 시각의 공시 분석 도구.{% endif %}">
 
-    {# ===== Open Graph 메타태그 (카톡/트위터/페북 미리보기) ===== #}
     <meta property="og:type" content="website">
     <meta property="og:title" content="{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% elif share_info and share_info.total_count > 0 %}🚨 오늘의 위험 공시 TOP {{ share_info.total_count }} · DART X-RAY{% else %}🩻 DART X-RAY{% endif %}">
     <meta property="og:description" content="{% if result and result.company %}{% if result.summary and result.summary.count > 0 %}최근 30일 공시 종합 점수 {{ result.summary.total_score_fmt }}점 ({{ result.summary.label }}) · 호재 {{ result.summary.good_ct }} / 악재 {{ result.summary.bad_ct }} / 일반 {{ result.summary.neutral_ct }}{% else %}{{ result.company }}의 공시·배당·임원 보수를 한눈에 분석{% endif %}{% elif share_info and share_info.top_companies %}{{ share_info.top_companies|join(', ') }} 등 한국 주식 시장의 위험 공시를 한눈에. 회생/거래정지/감자 등 자동 분석.{% else %}공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진. 공시 50개+ 자동 해석, 자금목적·시총 대비 심층 분석.{% endif %}">
@@ -17,11 +16,13 @@
     <meta property="og:site_name" content="DART X-RAY">
     <meta property="og:locale" content="ko_KR">
 
-    {# ===== Twitter Card ===== #}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% elif share_info and share_info.total_count > 0 %}🚨 오늘의 위험 공시 TOP {{ share_info.total_count }} · DART X-RAY{% else %}🩻 DART X-RAY{% endif %}">
     <meta name="twitter:description" content="{% if result and result.company %}{{ result.company }}의 공시를 자동 분석. VC 시각의 깊이 있는 해석.{% elif share_info and share_info.top_companies %}{{ share_info.top_companies|join(', ') }} 등 한국 주식 시장의 위험 공시. 회생/거래정지/감자 자동 분석.{% else %}공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진{% endif %}">
     <meta name="twitter:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+
+    <!-- HTML2Canvas: 분석 카드 저장 기능 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -90,933 +91,7 @@
         .sug-code { color: #9ca3af; font-family: monospace; font-size: 13px; }
         .sug-empty { padding: 14px 16px; color: #9ca3af; font-size: 14px; }
 
-        .card {
-            background: #1f2937; padding: 24px;
-            border-radius: 12px; margin-bottom: 20px;
-        }
-        .card h2 { font-size: 20px; margin-bottom: 16px; color: #60a5fa; }
-
-        /* ===== 공유 바 ===== */
-        .share-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            background: #1a1f2e;
-            padding: 14px 18px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-            border: 1px solid #1f2937;
-            flex-wrap: wrap;
-        }
-        .share-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-width: 0;
-            flex: 1;
-        }
-        .share-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #93c5fd;
-        }
-        .share-url {
-            font-size: 11px;
-            color: #6b7280;
-            font-family: 'SF Mono', monospace;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .share-actions {
-            display: flex;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-        .share-btn {
-            padding: 8px 14px;
-            font-size: 13px;
-            font-weight: 600;
-            background: #1e3a5f;
-            color: #93c5fd;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
-        .share-btn:hover {
-            background: #2563eb;
-            color: white;
-        }
-        .share-btn.copied {
-            background: #14532d;
-            color: #86efac;
-        }
-        .share-btn-kakao {
-            background: #fef3c7;
-            color: #78350f;
-        }
-        .share-btn-kakao:hover {
-            background: #fde68a;
-            color: #422006;
-        }
-        @media (max-width: 600px) {
-            .share-bar { padding: 12px 14px; gap: 10px; }
-            .share-label { font-size: 12px; }
-            .share-url { font-size: 10px; }
-            .share-btn { font-size: 12px; padding: 7px 11px; }
-            .share-actions { width: 100%; }
-            .share-btn { flex: 1; }
-        }
-
-        /* ===== 공시 히어로 섹션 ===== */
-        .hero { padding: 28px; }
-        .hero h2 { font-size: 22px; margin-bottom: 4px; }
-        .hero-sub {
-            color: #9ca3af; font-size: 13px; margin-bottom: 20px;
-        }
-
-        .tabs {
-            display: flex; gap: 6px;
-            background: #0f1419; padding: 6px;
-            border-radius: 12px; margin-bottom: 20px;
-            border: 1px solid #1f2937;
-        }
-        .tab-btn {
-            flex: 1; padding: 12px 14px; font-size: 14px; font-weight: 700;
-            background: transparent; color: #6b7280;
-            border: none; border-radius: 8px; cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        .tab-btn:hover { color: #d1d5db; background: rgba(55, 65, 81, 0.3); }
-
-        .tab-btn.active[data-tab="bad"] {
-            background: linear-gradient(135deg, #7f1d1d 0%, #4c1d1d 100%);
-            color: #fecaca;
-            box-shadow: 0 2px 12px rgba(248, 113, 113, 0.25);
-        }
-        .tab-btn.active[data-tab="good"] {
-            background: linear-gradient(135deg, #14532d 0%, #052e16 100%);
-            color: #86efac;
-            box-shadow: 0 2px 12px rgba(74, 222, 128, 0.25);
-        }
-        .tab-btn.active[data-tab="neutral"] {
-            background: linear-gradient(135deg, #1e3a5f 0%, #172a45 100%);
-            color: #93c5fd;
-            box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2);
-        }
-
-        .tab-count {
-            display: inline-block; margin-left: 6px;
-            padding: 2px 9px; border-radius: 10px;
-            background: rgba(0, 0, 0, 0.4);
-            font-size: 12px; font-weight: 700;
-        }
-        .tab-btn.active .tab-count {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-
-        .sig-card {
-            background: #0f1419; padding: 16px;
-            border-radius: 10px; margin-bottom: 10px;
-            border-left: 4px solid #374151;
-        }
-        .sig-card.good { border-left-color: #4ade80; }
-        .sig-card.bad { border-left-color: #f87171; }
-        .sig-card.neutral { border-left-color: #60a5fa; }
-
-        .sig-header {
-            display: flex; justify-content: space-between;
-            align-items: flex-start; gap: 12px; margin-bottom: 8px;
-        }
-        .sig-meta { display: flex; flex-direction: column; gap: 2px; }
-        .sig-date { color: #9ca3af; font-size: 12px; }
-        .sig-rule { color: #e6e6e6; font-size: 15px; font-weight: 600; }
-
-        .sig-score-box {
-            text-align: center; padding: 10px 14px;
-            border-radius: 10px; background: #1f2937;
-            min-width: 88px;
-        }
-        .sig-score-emoji {
-            font-size: 28px; line-height: 1;
-            margin-bottom: 4px;
-        }
-        .sig-score-label {
-            font-size: 13px; font-weight: 700;
-            line-height: 1.2;
-        }
-        .sig-card.good .sig-score-label { color: #4ade80; }
-        .sig-card.bad .sig-score-label { color: #f87171; }
-        .sig-card.neutral .sig-score-label { color: #9ca3af; }
-        .sig-score-num {
-            font-size: 11px; color: #6b7280;
-            margin-top: 4px; font-weight: 500;
-        }
-
-        .sig-title {
-            color: #d1d5db; font-size: 12px;
-            margin: 8px 0; padding: 8px 10px;
-            background: #1f2937; border-radius: 6px;
-            font-family: 'SF Mono', monospace;
-        }
-        .sig-explain {
-            color: #e6e6e6; font-size: 14px;
-            line-height: 1.65; padding: 4px 0;
-        }
-        .cb-analysis {
-            margin-top: 14px;
-            padding: 14px 16px;
-            background: #1a1f2e;
-            border-left: 3px solid #f59e0b;
-            border-radius: 8px;
-        }
-        .cb-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        .cb-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #fbbf24;
-        }
-        .cb-summary {
-            font-size: 12px;
-            color: #d1d5db;
-            font-weight: 500;
-        }
-        .cb-warnings {
-            margin: 10px 0 12px 0;
-            padding-left: 18px;
-            list-style: none;
-        }
-        .cb-warnings li {
-            font-size: 13px;
-            color: #e5e7eb;
-            line-height: 1.6;
-            margin-bottom: 4px;
-            position: relative;
-        }
-        .cb-warnings li::before {
-            content: '▸';
-            position: absolute;
-            left: -14px;
-            color: #6b7280;
-        }
-        .cb-ratios {
-            margin-top: 12px;
-        }
-        .cb-ratio-label {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-        .cb-ratio-bar {
-            display: flex;
-            height: 10px;
-            background: #0f1419;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-        .bar-fclt { background: #4ade80; }
-        .bar-op { background: #f87171; }
-        .bar-debt { background: #dc2626; }
-        .bar-other-stk { background: #60a5fa; }
-        .bar-biz-acq { background: #a78bfa; }
-        .bar-etc { background: #6b7280; }
-
-        .cb-ratio-legend {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            font-size: 11px;
-            color: #9ca3af;
-        }
-        .cb-ratio-legend span {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .cb-ratio-legend .dot-fclt,
-        .cb-ratio-legend .dot-op,
-        .cb-ratio-legend .dot-debt,
-        .cb-ratio-legend .dot-other-stk,
-        .cb-ratio-legend .dot-biz-acq,
-        .cb-ratio-legend .dot-etc {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 2px;
-        }
-        .dot-fclt { background: #4ade80; }
-        .dot-op { background: #f87171; }
-        .dot-debt { background: #dc2626; }
-        .dot-other-stk { background: #60a5fa; }
-        .dot-biz-acq { background: #a78bfa; }
-        .dot-etc { background: #6b7280; }
-
-        .treasury-analysis {
-            margin-top: 14px;
-            padding: 14px 16px;
-            background: #1a1f2e;
-            border-left: 3px solid #60a5fa;
-            border-radius: 8px;
-        }
-        .treasury-analysis.acquisition { border-left-color: #4ade80; }
-        .treasury-analysis.disposal { border-left-color: #fbbf24; }
-
-        .treasury-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-        .treasury-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #93c5fd;
-        }
-        .treasury-summary {
-            font-size: 12px;
-            color: #d1d5db;
-            font-weight: 500;
-        }
-        .treasury-warnings {
-            margin: 10px 0 8px 0;
-            padding-left: 18px;
-            list-style: none;
-        }
-        .treasury-warnings li {
-            font-size: 13px;
-            color: #e5e7eb;
-            line-height: 1.6;
-            margin-bottom: 4px;
-            position: relative;
-        }
-        .treasury-warnings li::before {
-            content: '▸';
-            position: absolute;
-            left: -14px;
-            color: #6b7280;
-        }
-        .treasury-tier-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 600;
-            background: #1e3a5f;
-            color: #93c5fd;
-        }
-        @media (max-width: 600px) {
-            .cb-analysis { padding: 12px; }
-            .cb-title { font-size: 12px; }
-            .cb-summary { font-size: 11px; }
-            .cb-warnings li { font-size: 12px; }
-            .cb-ratio-legend { font-size: 10px; gap: 8px; }
-        }
-        .sig-dart-link {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 8px 14px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #93c5fd;
-            background: #1e3a5f;
-            border-radius: 6px;
-            text-decoration: none;
-            transition: all 0.15s;
-        }
-        .sig-dart-link:hover {
-            background: #2563eb;
-            color: white;
-        }
-
-        .stat { display: flex; justify-content: space-between; padding: 8px 0; }
-        .stat-label { color: #9ca3af; }
-        .yoy-up { color: #4ade80; }
-        .yoy-down { color: #f87171; }
-        .exec { padding: 12px 0; border-bottom: 1px solid #374151; }
-        .exec:last-child { border-bottom: none; }
-        .exec-name { font-weight: 600; }
-        .exec-position { color: #9ca3af; font-size: 13px; margin-left: 8px; }
-        .exec-pay { color: #fbbf24; font-size: 18px; margin-top: 4px; }
-        .exec-excluded { color: #f87171; font-size: 12px; margin-top: 4px; }
-        .cb-item { padding: 10px 0; border-bottom: 1px solid #374151; }
-        .cb-warn {
-            background: #7f1d1d; color: #fecaca;
-            padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;
-        }
-        .div-kpi-row {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .div-kpi-box {
-            flex: 1;
-            min-width: 200px;
-            padding: 16px 18px;
-            background: #0f1419;
-            border-radius: 10px;
-            border-left: 3px solid #fbbf24;
-        }
-        .div-kpi-label {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-        .div-kpi-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #fbbf24;
-            line-height: 1.1;
-            margin-bottom: 4px;
-        }
-        .div-kpi-sub {
-            font-size: 12px;
-            color: #6b7280;
-        }
-
-        .div-recent-notice {
-            margin-bottom: 16px;
-            padding: 14px 16px;
-            background: #1a1f2e;
-            border-left: 3px solid #4ade80;
-            border-radius: 8px;
-        }
-        .div-notice-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .div-notice-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #86efac;
-        }
-        .div-notice-pattern {
-            display: inline-block;
-            padding: 2px 10px;
-            background: #14532d;
-            color: #86efac;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .div-notice-line {
-            display: flex;
-            gap: 10px;
-            align-items: baseline;
-            margin-bottom: 6px;
-            flex-wrap: wrap;
-        }
-        .div-notice-date {
-            color: #9ca3af;
-            font-size: 12px;
-            font-family: 'SF Mono', monospace;
-        }
-        .div-notice-name {
-            color: #e6e6e6;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        .div-notice-meta {
-            font-size: 11px;
-            color: #6b7280;
-            margin-bottom: 8px;
-        }
-        .div-disclaimer {
-            margin-top: 16px;
-            padding: 10px 14px;
-            background: #1a1f2e;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #9ca3af;
-            line-height: 1.5;
-        }
-        @media (max-width: 600px) {
-            .div-kpi-row { gap: 10px; }
-            .div-kpi-box { padding: 12px 14px; min-width: 100%; }
-            .div-kpi-value { font-size: 20px; }
-            .div-kpi-label { font-size: 11px; }
-            .div-recent-notice { padding: 12px; }
-            .div-notice-name { font-size: 12px; }
-        }
-        .empty { color: #9ca3af; font-style: italic; padding: 8px 0; }
-        .warning-note {
-            background: #422006; color: #fcd34d;
-            padding: 12px; border-radius: 8px;
-            font-size: 13px; margin-bottom: 12px;
-        }
-        .error {
-            background: #7f1d1d; color: #fecaca;
-            padding: 16px; border-radius: 8px;
-        }
-        .error-card {
-            background: #1f2937;
-            padding: 32px 28px;
-            border-radius: 12px;
-            text-align: center;
-            border-top: 3px solid #f87171;
-        }
-        .error-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            line-height: 1;
-        }
-        .error-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #fecaca;
-            margin-bottom: 8px;
-        }
-        .error-message {
-            font-size: 14px;
-            color: #d1d5db;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-        .error-hint {
-            display: inline-block;
-            text-align: left;
-            background: #0f1419;
-            padding: 14px 18px;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #9ca3af;
-            line-height: 1.8;
-        }
-        .error-hint strong {
-            color: #93c5fd;
-        }
-        .empty-card {
-            text-align: center;
-            padding: 40px 24px;
-            background: #0f1419;
-            border-radius: 10px;
-            margin: 8px 0;
-        }
-        .empty-card-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-            line-height: 1;
-            opacity: 0.6;
-        }
-        .empty-card-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #d1d5db;
-            margin-bottom: 6px;
-        }
-        .empty-card-desc {
-            font-size: 13px;
-            color: #6b7280;
-            line-height: 1.6;
-        }
-        .all-empty-notice {
-            text-align: center;
-            padding: 32px 24px;
-            background: #1a1f2e;
-            border-radius: 10px;
-            border: 1px dashed #374151;
-        }
-        .all-empty-notice-icon {
-            font-size: 36px;
-            margin-bottom: 10px;
-            line-height: 1;
-        }
-        .all-empty-notice-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #93c5fd;
-            margin-bottom: 6px;
-        }
-        .all-empty-notice-desc {
-            font-size: 13px;
-            color: #9ca3af;
-            line-height: 1.6;
-        }
-        .disclaimer-card {
-            background: #161b22;
-            border: 1px solid #1f2937;
-        }
-        .disclaimer-card h2 {
-            color: #9ca3af !important;
-            font-size: 16px !important;
-        }
-        .disclaimer-section {
-            margin-bottom: 16px;
-            padding-bottom: 14px;
-            border-bottom: 1px solid #1f2937;
-        }
-        .disclaimer-section:last-of-type {
-            border-bottom: none;
-            margin-bottom: 8px;
-            padding-bottom: 0;
-        }
-        .disclaimer-label {
-            font-size: 12px;
-            color: #93c5fd;
-            font-weight: 700;
-            margin-bottom: 6px;
-            letter-spacing: 0.3px;
-        }
-        .disclaimer-text {
-            font-size: 12.5px;
-            color: #9ca3af;
-            line-height: 1.7;
-        }
-        .disclaimer-text strong {
-            color: #d1d5db;
-            font-weight: 600;
-        }
-        .disclaimer-footer {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #1f2937;
-            font-size: 11.5px;
-            color: #6b7280;
-            text-align: center;
-            line-height: 1.6;
-        }
-        .disclaimer-link {
-            color: #60a5fa;
-            text-decoration: none;
-        }
-        .disclaimer-link:hover {
-            text-decoration: underline;
-        }
-        @media (max-width: 600px) {
-            .disclaimer-card { padding: 16px 14px; }
-            .disclaimer-card h2 { font-size: 14px !important; }
-            .disclaimer-label { font-size: 11px; }
-            .disclaimer-text { font-size: 11.5px; line-height: 1.65; }
-            .disclaimer-footer { font-size: 11px; }
-        }
-        /* ===== 🚨 위험 공시 TOP 5 섹션 ===== */
-        .risk-section {
-            margin-bottom: 32px;
-        }
-        
-        /* ===== 메인 페이지 공유 바 ===== */
-        .home-share-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            background: #1a1f2e;
-            padding: 14px 18px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-            border: 1px solid #1f2937;
-            flex-wrap: wrap;
-        }
-        .home-share-info {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            min-width: 0;
-            flex: 1;
-        }
-        .home-share-label {
-            font-size: 13px;
-            font-weight: 700;
-            color: #fca5a5;
-        }
-        .home-share-hint {
-            font-size: 11px;
-            color: #6b7280;
-        }
-        .home-share-actions {
-            display: flex;
-            gap: 6px;
-            flex-shrink: 0;
-            flex-wrap: wrap;
-        }
-        .home-share-btn {
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 700;
-            background: #1e3a5f;
-            color: #93c5fd;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
-        .home-share-btn:hover {
-            background: #2563eb;
-            color: white;
-        }
-        .home-share-btn.copied {
-            background: #14532d;
-            color: #86efac;
-        }
-        .home-share-btn-kakao {
-            background: #fef3c7;
-            color: #78350f;
-        }
-        .home-share-btn-kakao:hover {
-            background: #fde68a;
-            color: #422006;
-        }
-        .home-share-btn-twitter {
-            background: #1e293b;
-            color: #60a5fa;
-        }
-        .home-share-btn-twitter:hover {
-            background: #1d4ed8;
-            color: white;
-        }
-        @media (max-width: 600px) {
-            .home-share-bar { padding: 12px 14px; gap: 10px; }
-            .home-share-label { font-size: 12px; }
-            .home-share-hint { font-size: 10px; }
-            .home-share-actions { width: 100%; }
-            .home-share-btn { flex: 1; font-size: 11px; padding: 7px 8px; }
-        }
-        
-        .risk-header {
-            margin-bottom: 16px;
-            padding: 0 4px;
-        }
-        .risk-header {
-            margin-bottom: 16px;
-            padding: 0 4px;
-        }
-        .risk-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #e6e6e6;
-            margin-bottom: 4px;
-            letter-spacing: -0.3px;
-        }
-        .risk-subtitle {
-            font-size: 13px;
-            color: #9ca3af;
-            line-height: 1.5;
-        }
-        .risk-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .risk-card {
-            display: block;
-            padding: 18px 20px;
-            background: #1f2937;
-            border-radius: 12px;
-            border-left: 4px solid #f87171;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        .risk-card:hover {
-            transform: translateX(2px);
-            background: #232c3d;
-            box-shadow: 0 4px 16px rgba(248, 113, 113, 0.15);
-        }
-        .risk-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .risk-card-score {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .risk-card-emoji {
-            font-size: 22px;
-            line-height: 1;
-        }
-        .risk-card-points {
-            font-size: 16px;
-            font-weight: 800;
-            color: #fca5a5;
-        }
-        .risk-card-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #fca5a5;
-            padding: 2px 8px;
-            background: rgba(248, 113, 113, 0.15);
-            border-radius: 10px;
-        }
-        .risk-card-time {
-            font-size: 12px;
-            color: #6b7280;
-            font-weight: 500;
-        }
-        .risk-card-company {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-        .risk-card-name {
-            font-size: 17px;
-            font-weight: 700;
-            color: #e6e6e6;
-        }
-        .risk-card-code {
-            font-size: 12px;
-            color: #6b7280;
-            font-family: 'SF Mono', monospace;
-        }
-        .risk-card-rule {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fbbf24;
-            margin-bottom: 6px;
-        }
-        .risk-card-explain {
-            font-size: 13px;
-            color: #d1d5db;
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-        .risk-card-cta {
-            font-size: 12px;
-            font-weight: 700;
-            color: #93c5fd;
-            text-align: right;
-        }
-        .risk-footer {
-            margin-top: 14px;
-            padding: 10px 14px;
-            background: #1a1f2e;
-            border-radius: 6px;
-            font-size: 11px;
-            color: #6b7280;
-            text-align: center;
-        }
-
-        @media (max-width: 600px) {
-            .risk-title { font-size: 19px; }
-            .risk-subtitle { font-size: 12px; }
-            .risk-card { padding: 14px 16px; }
-            .risk-card-emoji { font-size: 20px; }
-            .risk-card-points { font-size: 15px; }
-            .risk-card-label { font-size: 10px; padding: 2px 6px; }
-            .risk-card-name { font-size: 15px; }
-            .risk-card-rule { font-size: 13px; }
-            .risk-card-explain { font-size: 12px; line-height: 1.55; }
-            .risk-card-cta { font-size: 11px; }
-            .risk-footer { font-size: 10px; padding: 8px 12px; }
-        }
-        .landing {
-            text-align: center;
-            padding: 20px 0 40px;
-        }
-        .landing-tagline {
-            display: inline-block;
-            padding: 8px 18px;
-            background: #1e3a5f;
-            color: #93c5fd;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 32px;
-        }
-        .landing-features {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .feature-card {
-            background: #1f2937;
-            padding: 24px 20px;
-            border-radius: 12px;
-            text-align: left;
-            border-top: 3px solid #374151;
-            transition: all 0.2s ease;
-        }
-        .feature-card:hover {
-            border-top-color: #60a5fa;
-            transform: translateY(-2px);
-        }
-        .feature-card:nth-child(1) { border-top-color: #4ade80; }
-        .feature-card:nth-child(2) { border-top-color: #fbbf24; }
-        .feature-card:nth-child(3) { border-top-color: #f87171; }
-        .feature-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-            line-height: 1;
-        }
-        .feature-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #e6e6e6;
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-        .feature-desc {
-            font-size: 13px;
-            color: #9ca3af;
-            line-height: 1.6;
-        }
-        .landing-cta {
-            font-size: 14px;
-            color: #9ca3af;
-            margin-bottom: 24px;
-            padding: 14px 20px;
-            background: #1a1f2e;
-            border-radius: 10px;
-            border: 1px dashed #374151;
-        }
-        .landing-cta strong {
-            color: #93c5fd;
-        }
-        .landing-disclaimer {
-            font-size: 11px;
-            color: #6b7280;
-            line-height: 1.7;
-            padding: 14px 20px;
-            background: #1a1f2e;
-            border-radius: 8px;
-        }
-
-        @media (max-width: 600px) {
-            .landing-tagline { font-size: 12px; padding: 6px 14px; margin-bottom: 24px; }
-            .landing-features {
-                grid-template-columns: 1fr;
-                gap: 12px;
-                margin-bottom: 24px;
-            }
-            .feature-card { padding: 20px 16px; }
-            .feature-icon { font-size: 28px; margin-bottom: 10px; }
-            .feature-title { font-size: 14px; }
-            .feature-desc { font-size: 12.5px; }
-            .landing-cta { font-size: 13px; padding: 12px 16px; }
-            .landing-disclaimer { font-size: 10.5px; padding: 12px 16px; }
-        }
+        /* ===== 로딩 오버레이 ===== */
         .loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -1115,7 +190,101 @@
             .loading-title { font-size: 18px; margin-bottom: 20px; }
             .loading-step { font-size: 12px; padding: 7px 12px; }
         }
-        
+
+        .card {
+            background: #1f2937; padding: 24px;
+            border-radius: 12px; margin-bottom: 20px;
+        }
+        .card h2 { font-size: 20px; margin-bottom: 16px; color: #60a5fa; }
+
+        /* ===== 공유 바 ===== */
+        .share-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            background: #1a1f2e;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #1f2937;
+            flex-wrap: wrap;
+        }
+        .share-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+            flex: 1;
+        }
+        .share-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #93c5fd;
+        }
+        .share-url {
+            font-size: 11px;
+            color: #6b7280;
+            font-family: 'SF Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .share-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .share-btn {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #1e3a5f;
+            color: #93c5fd;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .share-btn:hover {
+            background: #2563eb;
+            color: white;
+        }
+        .share-btn.copied {
+            background: #14532d;
+            color: #86efac;
+        }
+        .share-btn-kakao {
+            background: #fef3c7;
+            color: #78350f;
+        }
+        .share-btn-kakao:hover {
+            background: #fde68a;
+            color: #422006;
+        }
+        .share-btn-save {
+            background: #4c1d95;
+            color: #c4b5fd;
+        }
+        .share-btn-save:hover {
+            background: #6d28d9;
+            color: white;
+        }
+        .share-btn-save:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        @media (max-width: 600px) {
+            .share-bar { padding: 12px 14px; gap: 10px; }
+            .share-label { font-size: 12px; }
+            .share-url { font-size: 10px; }
+            .share-btn { font-size: 12px; padding: 7px 11px; }
+            .share-actions { width: 100%; }
+            .share-btn { flex: 1; min-width: 90px; }
+        }
+
         /* ===== 🎯 결론 카드 (두괄식) ===== */
         .conclusion-card {
             padding: 28px 32px;
@@ -1130,23 +299,17 @@
             opacity: 0.04;
             pointer-events: none;
         }
-        .conclusion-good {
-            border-left-color: #4ade80;
-        }
+        .conclusion-good { border-left-color: #4ade80; }
         .conclusion-good::before {
             background: radial-gradient(ellipse at top left, #4ade80, transparent 60%);
             opacity: 0.08;
         }
-        .conclusion-bad {
-            border-left-color: #f87171;
-        }
+        .conclusion-bad { border-left-color: #f87171; }
         .conclusion-bad::before {
             background: radial-gradient(ellipse at top left, #f87171, transparent 60%);
             opacity: 0.1;
         }
-        .conclusion-neutral {
-            border-left-color: #60a5fa;
-        }
+        .conclusion-neutral { border-left-color: #60a5fa; }
         .conclusion-neutral::before {
             background: radial-gradient(ellipse at top left, #60a5fa, transparent 60%);
             opacity: 0.06;
@@ -1191,29 +354,17 @@
             margin-bottom: 4px;
             letter-spacing: -0.5px;
         }
-        .conclusion-card.conclusion-good .conclusion-score {
-            color: #4ade80;
-        }
-        .conclusion-card.conclusion-bad .conclusion-score {
-            color: #f87171;
-        }
-        .conclusion-card.conclusion-neutral .conclusion-score {
-            color: #93c5fd;
-        }
+        .conclusion-card.conclusion-good .conclusion-score { color: #4ade80; }
+        .conclusion-card.conclusion-bad .conclusion-score { color: #f87171; }
+        .conclusion-card.conclusion-neutral .conclusion-score { color: #93c5fd; }
         .conclusion-label {
             font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.5px;
         }
-        .conclusion-card.conclusion-good .conclusion-label {
-            color: #86efac;
-        }
-        .conclusion-card.conclusion-bad .conclusion-label {
-            color: #fecaca;
-        }
-        .conclusion-card.conclusion-neutral .conclusion-label {
-            color: #93c5fd;
-        }
+        .conclusion-card.conclusion-good .conclusion-label { color: #86efac; }
+        .conclusion-card.conclusion-bad .conclusion-label { color: #fecaca; }
+        .conclusion-card.conclusion-neutral .conclusion-label { color: #93c5fd; }
         .conclusion-headline {
             font-size: 16px;
             font-weight: 600;
@@ -1242,7 +393,6 @@
             letter-spacing: 0.3px;
         }
         
-        /* 좌우 2단 그리드 (좋은 신호 + 주의 ↔ 추가 정보) */
         .conclusion-sections-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1255,27 +405,16 @@
             gap: 14px;
         }
         
-        .conclusion-section {
-            margin-bottom: 0;
-        }
-        .conclusion-section:last-child {
-            margin-bottom: 0;
-        }
+        .conclusion-section { margin-bottom: 0; }
         .conclusion-section-title {
             font-size: 12px;
             font-weight: 700;
             margin-bottom: 8px;
             letter-spacing: 0.3px;
         }
-        .conclusion-section.conclusion-good .conclusion-section-title {
-            color: #86efac;
-        }
-        .conclusion-section.conclusion-warning .conclusion-section-title {
-            color: #fca5a5;
-        }
-        .conclusion-section.conclusion-context .conclusion-section-title {
-            color: #93c5fd;
-        }
+        .conclusion-section.conclusion-good .conclusion-section-title { color: #86efac; }
+        .conclusion-section.conclusion-warning .conclusion-section-title { color: #fca5a5; }
+        .conclusion-section.conclusion-context .conclusion-section-title { color: #93c5fd; }
         .conclusion-list {
             list-style: none;
             padding: 0;
@@ -1289,9 +428,7 @@
             position: relative;
             margin-bottom: 5px;
         }
-        .conclusion-list li:last-child {
-            margin-bottom: 0;
-        }
+        .conclusion-list li:last-child { margin-bottom: 0; }
         .conclusion-list li::before {
             content: '•';
             position: absolute;
@@ -1299,15 +436,9 @@
             color: #6b7280;
             font-weight: 700;
         }
-        .conclusion-section.conclusion-good .conclusion-list li::before {
-            color: #4ade80;
-        }
-        .conclusion-section.conclusion-warning .conclusion-list li::before {
-            color: #f87171;
-        }
-        .conclusion-section.conclusion-context .conclusion-list li::before {
-            color: #60a5fa;
-        }
+        .conclusion-section.conclusion-good .conclusion-list li::before { color: #4ade80; }
+        .conclusion-section.conclusion-warning .conclusion-list li::before { color: #f87171; }
+        .conclusion-section.conclusion-context .conclusion-list li::before { color: #60a5fa; }
         
         .conclusion-disclaimer {
             padding: 10px 14px;
@@ -1345,441 +476,327 @@
             .conclusion-list li { font-size: 12.5px; }
             .conclusion-disclaimer { font-size: 11px; padding: 9px 12px; }
         }
-        
-        .stock-header { padding: 24px 28px; }
-        .stock-top {
-            display: flex; justify-content: space-between;
-            align-items: flex-start; gap: 16px;
-            margin-bottom: 16px;
-        }
-        .stock-name {
-            font-size: 24px; font-weight: 700;
-            color: #e6e6e6; margin-bottom: 4px;
-        }
-        .stock-meta {
-            display: flex; gap: 8px; align-items: center;
-            font-size: 13px; color: #9ca3af; flex-wrap: wrap;
-        }
-        .stock-badge {
-            background: #1e3a5f; color: #93c5fd;
-            padding: 2px 8px; border-radius: 4px;
-            font-size: 11px; font-weight: 600;
-        }
-        .stock-code {
-            font-family: 'SF Mono', monospace;
-            color: #9ca3af;
-        }
-        .stock-sector { color: #6b7280; }
 
-        .stock-price-block { text-align: right; }
-        .stock-price {
-            font-size: 28px; font-weight: 700;
-            color: #e6e6e6; line-height: 1;
-        }
-        .stock-price .krw {
-            font-size: 14px; font-weight: 500;
-            color: #9ca3af; margin-left: 4px;
-        }
-        .stock-change {
-            margin-top: 6px; font-size: 14px;
-            font-weight: 600;
-        }
-        .stock-price-block.up .stock-change,
-        .stock-price-block.up .stock-price { color: #f87171; }
-        .stock-price-block.down .stock-change,
-        .stock-price-block.down .stock-price { color: #60a5fa; }
-        .stock-price-block.flat .stock-change { color: #9ca3af; }
-
-        .stock-stats {
-            display: flex; gap: 24px;
-            padding: 12px 0; border-top: 1px solid #374151;
-            flex-wrap: wrap;
-        }
-        .stat-mini {
-            display: flex; flex-direction: column; gap: 2px;
-        }
-        .stat-mini-label {
-            font-size: 11px; color: #9ca3af;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .stat-mini-value {
-            font-size: 15px; font-weight: 600; color: #e6e6e6;
-        }
-        .stock-footnote {
-            font-size: 11px; color: #6b7280;
-            margin-top: 8px; text-align: right;
-        }
-
-        /* ===== 미니 정보 박스 행 (점수 + 차트) ===== */
-        .mini-info-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 16px 0 14px 0;
-        }
-        .mini-score-box {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 16px;
-            background: #0f1419;
-            border-radius: 10px;
-            border-left: 3px solid #6b7280;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.15s ease;
-            min-width: 0;
-        }
-        .mini-score-box:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .mini-score-box.mini-score-good { border-left-color: #4ade80; }
-        .mini-score-box.mini-score-bad { border-left-color: #f87171; }
-        .mini-score-box.mini-score-neutral { border-left-color: #60a5fa; }
-
-        .mini-score-emoji {
-            font-size: 32px;
-            line-height: 1;
-        }
-        .mini-score-right {
-            flex: 1;
-            min-width: 0;
-        }
-        .mini-score-label {
-            font-size: 11px;
-            color: #9ca3af;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        .mini-score-value {
-            font-size: 18px;
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 2px;
-        }
-        .mini-score-good .mini-score-value { color: #4ade80; }
-        .mini-score-bad .mini-score-value { color: #f87171; }
-        .mini-score-neutral .mini-score-value { color: #93c5fd; }
-        .mini-score-tag {
-            font-size: 12px;
-            font-weight: 700;
-            margin-left: 4px;
-        }
-        .mini-score-detail {
-            font-size: 11px;
-            color: #6b7280;
-            font-weight: 500;
-        }
-
-        .mini-chart-box {
-            padding: 14px 16px;
-            background: #0f1419;
-            border-radius: 10px;
-            border-left: 3px solid #60a5fa;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 0;
-        }
-        .mini-chart-label {
-            font-size: 11px;
-            color: #9ca3af;
-            font-weight: 600;
-        }
-        .mini-chart-svg-wrap {
-            width: 100%;
-            height: 50px;
-        }
-        .mini-chart-svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        .mini-chart-meta {
+        /* ===== 🚨 위험 + 💰 호재 공시 섹션 ===== */
+        .home-share-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 10px;
+            gap: 16px;
+            background: #1a1f2e;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #1f2937;
+            flex-wrap: wrap;
+        }
+        .home-share-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+            flex: 1;
+        }
+        .home-share-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fca5a5;
+        }
+        .home-share-hint {
+            font-size: 11px;
             color: #6b7280;
-            font-family: 'SF Mono', monospace;
         }
-        .mini-chart-change {
-            font-weight: 700;
-            font-family: -apple-system, sans-serif;
+        .home-share-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .home-share-btn {
+            padding: 8px 12px;
             font-size: 12px;
-        }
-        .mini-chart-up { color: #f87171; }
-        .mini-chart-down { color: #60a5fa; }
-        .mini-chart-flat { color: #9ca3af; }
-        /* ===== 공시 0건 상태 (점수 박스) ===== */
-        .mini-score-empty {
-            border-left-color: #4b5563 !important;
-            opacity: 0.9;
-        }
-        .mini-score-empty .mini-score-emoji {
-            opacity: 0.7;
-        }
-        .mini-score-value-empty {
-            font-size: 16px;
             font-weight: 700;
-            color: #9ca3af;
-            line-height: 1.1;
-            margin-bottom: 2px;
+            background: #1e3a5f;
+            color: #93c5fd;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .home-share-btn:hover {
+            background: #2563eb;
+            color: white;
+        }
+        .home-share-btn.copied {
+            background: #14532d;
+            color: #86efac;
+        }
+        .home-share-btn-kakao {
+            background: #fef3c7;
+            color: #78350f;
+        }
+        .home-share-btn-kakao:hover {
+            background: #fde68a;
+            color: #422006;
+        }
+        .home-share-btn-twitter {
+            background: #1e293b;
+            color: #60a5fa;
+        }
+        .home-share-btn-twitter:hover {
+            background: #1d4ed8;
+            color: white;
+        }
+        .home-share-btn-save {
+            background: #4c1d95;
+            color: #c4b5fd;
+        }
+        .home-share-btn-save:hover {
+            background: #6d28d9;
+            color: white;
+        }
+        @media (max-width: 600px) {
+            .home-share-bar { padding: 12px 14px; gap: 10px; }
+            .home-share-label { font-size: 12px; }
+            .home-share-hint { font-size: 10px; }
+            .home-share-actions { width: 100%; }
+            .home-share-btn { flex: 1; font-size: 11px; padding: 7px 8px; min-width: 70px; }
         }
 
-        /* ===== 차트 데이터 없음 상태 ===== */
-        .mini-chart-empty {
-            border-left-color: #4b5563 !important;
-            opacity: 0.9;
+        /* ===== 호재 vs 악재 대결 구도 ===== */
+        .battle-section {
+            margin-bottom: 32px;
         }
-        .mini-chart-empty-content {
+        .battle-header {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        .battle-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #e6e6e6;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+        .battle-subtitle {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .battle-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .battle-column-header {
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            font-weight: 800;
+        }
+        .battle-column-header-good {
+            background: linear-gradient(135deg, #14532d 0%, #052e16 100%);
+            color: #86efac;
+            box-shadow: 0 2px 12px rgba(74, 222, 128, 0.2);
+        }
+        .battle-column-header-bad {
+            background: linear-gradient(135deg, #7f1d1d 0%, #4c1d1d 100%);
+            color: #fecaca;
+            box-shadow: 0 2px 12px rgba(248, 113, 113, 0.2);
+        }
+        .battle-card-list {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
-            height: 50px;
         }
-        .mini-chart-empty-icon {
-            font-size: 24px;
-            opacity: 0.5;
+        .battle-card {
+            display: block;
+            padding: 14px 16px;
+            background: #1f2937;
+            border-radius: 10px;
+            border-left: 3px solid #374151;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
         }
-        .mini-chart-empty-text {
+        .battle-card:hover {
+            transform: translateX(2px);
+        }
+        .battle-card-good { border-left-color: #4ade80; }
+        .battle-card-good:hover {
+            background: #1a3320;
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15);
+        }
+        .battle-card-bad { border-left-color: #f87171; }
+        .battle-card-bad:hover {
+            background: #321a1a;
+            box-shadow: 0 4px 12px rgba(248, 113, 113, 0.15);
+        }
+        .battle-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+        .battle-card-score {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .battle-card-good .battle-card-score { color: #86efac; }
+        .battle-card-bad .battle-card-score { color: #fca5a5; }
+        .battle-card-time {
             font-size: 11px;
             color: #6b7280;
-            line-height: 1.4;
-            text-align: left;
         }
-        @media (max-width: 600px) {
-            .mini-info-row {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .mini-score-box { padding: 12px 14px; }
-            .mini-score-emoji { font-size: 28px; }
-            .mini-score-value { font-size: 16px; }
-            .mini-chart-box { padding: 12px 14px; }
-            .mini-chart-svg-wrap { height: 45px; }
-        }
-
-        .summary-card {
-            padding: 28px 32px;
-            border-left: 4px solid #374151;
-            position: relative;
-            overflow: hidden;
-        }
-        .summary-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0.04;
-            pointer-events: none;
-        }
-        .summary-card.good {
-            border-left-color: #4ade80;
-        }
-        .summary-card.good::before {
-            background: radial-gradient(ellipse at top left, #4ade80, transparent 60%);
-            opacity: 0.08;
-        }
-        .summary-card.bad {
-            border-left-color: #f87171;
-        }
-        .summary-card.bad::before {
-            background: radial-gradient(ellipse at top left, #f87171, transparent 60%);
-            opacity: 0.08;
-        }
-        .summary-card.neutral {
-            border-left-color: #60a5fa;
-        }
-        .summary-card.neutral::before {
-            background: radial-gradient(ellipse at top left, #60a5fa, transparent 60%);
-            opacity: 0.06;
-        }
-
-        .summary-title {
-            font-size: 14px; color: #9ca3af;
-            font-weight: 600; margin-bottom: 16px;
-            text-transform: none;
-            position: relative;
-        }
-        .summary-body {
-            display: flex; gap: 28px;
-            align-items: center; flex-wrap: wrap;
-            position: relative;
-        }
-        .summary-main {
-            text-align: center;
-            min-width: 160px;
-            padding: 20px 24px;
-            background: #0f1419;
-            border-radius: 14px;
-            position: relative;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-        }
-        .summary-card.good .summary-main {
-            background: linear-gradient(135deg, #0f1419 0%, #14532d 200%);
-            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.15);
-        }
-        .summary-card.bad .summary-main {
-            background: linear-gradient(135deg, #0f1419 0%, #7f1d1d 200%);
-            box-shadow: 0 4px 20px rgba(248, 113, 113, 0.15);
-        }
-        .summary-card.neutral .summary-main {
-            background: linear-gradient(135deg, #0f1419 0%, #1e3a5f 200%);
-            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.15);
-        }
-        .summary-emoji {
-            font-size: 56px;
-            line-height: 1;
-            margin-bottom: 8px;
-            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
-        }
-        .summary-score {
-            font-size: 36px;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
-        }
-        .summary-card.good .summary-score {
-            color: #4ade80;
-            text-shadow: 0 2px 12px rgba(74, 222, 128, 0.3);
-        }
-        .summary-card.bad .summary-score {
-            color: #f87171;
-            text-shadow: 0 2px 12px rgba(248, 113, 113, 0.3);
-        }
-        .summary-card.neutral .summary-score {
-            color: #93c5fd;
-            text-shadow: 0 2px 12px rgba(147, 197, 253, 0.2);
-        }
-        .summary-label {
+        .battle-card-name {
             font-size: 14px;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            color: #e6e6e6;
+            margin-bottom: 4px;
         }
-        .summary-card.good .summary-label { color: #86efac; }
-        .summary-card.bad .summary-label { color: #fecaca; }
-        .summary-card.neutral .summary-label { color: #93c5fd; }
-
-        .summary-detail {
-            flex: 1; min-width: 260px;
-        }
-        .summary-description {
-            color: #d1d5db; font-size: 14px;
-            line-height: 1.6; margin-bottom: 14px;
-        }
-        .summary-bar {
-            display: flex; height: 14px;
-            background: #0f1419; border-radius: 7px;
-            overflow: hidden; margin-bottom: 12px;
-            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
-        }
-        .bar-bad {
-            background: linear-gradient(90deg, #dc2626, #f87171);
-            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.1);
-        }
-        .bar-neutral {
-            background: linear-gradient(90deg, #4b5563, #6b7280);
-        }
-        .bar-good {
-            background: linear-gradient(90deg, #16a34a, #4ade80);
-            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.1);
-        }
-        .summary-breakdown {
-            display: flex; gap: 14px;
-            font-size: 13px; flex-wrap: wrap;
-            font-weight: 700;
-        }
-        .breakdown-bad {
-            color: #fca5a5;
-            padding: 4px 10px;
-            background: rgba(248, 113, 113, 0.12);
-            border-radius: 6px;
-        }
-        .breakdown-neutral {
-            color: #d1d5db;
-            padding: 4px 10px;
-            background: rgba(156, 163, 175, 0.1);
-            border-radius: 6px;
-        }
-        .breakdown-good {
-            color: #86efac;
-            padding: 4px 10px;
-            background: rgba(74, 222, 128, 0.12);
-            border-radius: 6px;
-        }
-        .breakdown-total {
+        .battle-card-code {
+            font-size: 11px;
             color: #6b7280;
-            font-weight: 500;
-            align-self: center;
+            font-family: 'SF Mono', monospace;
+            font-weight: normal;
         }
-        .summary-warn-mini {
+        .battle-card-rule {
+            font-size: 12px;
+            color: #d1d5db;
+            line-height: 1.4;
+        }
+        .battle-empty {
+            padding: 24px 16px;
+            text-align: center;
+            background: #1a1f2e;
+            border-radius: 10px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        @media (max-width: 600px) {
+            .battle-title { font-size: 19px; }
+            .battle-subtitle { font-size: 12px; }
+            .battle-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .battle-column-header { font-size: 14px; padding: 12px 16px; }
+            .battle-card { padding: 12px 14px; }
+            .battle-card-score { font-size: 13px; }
+            .battle-card-name { font-size: 13px; }
+            .battle-card-rule { font-size: 11.5px; }
+        }
+        .battle-footer {
             margin-top: 14px;
             padding: 10px 14px;
-            background: rgba(251, 191, 36, 0.08);
-            border-left: 3px solid #fbbf24;
+            background: #1a1f2e;
             border-radius: 6px;
-            font-size: 12px;
-            color: #fcd34d;
-            line-height: 1.5;
+            font-size: 11px;
+            color: #6b7280;
+            text-align: center;
         }
 
-        @media (max-width: 600px) {
-            body { padding: 20px 12px; }
-            header h1 { font-size: 28px; }
-            header p { font-size: 12px; }
-            form { flex-direction: column; }
-            button { width: 100%; }
+        /* ===== 공시 히어로 섹션 ===== */
+        .hero { padding: 28px; }
+        .hero h2 { font-size: 22px; margin-bottom: 4px; }
+        .hero-sub {
+            color: #9ca3af; font-size: 13px; margin-bottom: 20px;
+        }
 
-            .stock-header { padding: 20px 18px; }
-            .stock-top { flex-direction: column; gap: 12px; margin-bottom: 14px; }
-            .stock-name { font-size: 22px; }
-            .stock-meta { font-size: 12px; }
-            .stock-price-block { text-align: left; width: 100%; }
-            .stock-price { font-size: 26px; }
-            .stock-change { margin-top: 4px; }
-            .stock-stats { gap: 16px; }
-            .stat-mini-value { font-size: 14px; }
+        .tabs {
+            display: flex; gap: 6px;
+            background: #0f1419; padding: 6px;
+            border-radius: 12px; margin-bottom: 20px;
+            border: 1px solid #1f2937;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px 14px; font-size: 14px; font-weight: 700;
+            background: transparent; color: #6b7280;
+            border: none; border-radius: 8px; cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .tab-btn:hover { color: #d1d5db; background: rgba(55, 65, 81, 0.3); }
 
-            .summary-card { padding: 22px 20px; }
-            .summary-body { flex-direction: column; gap: 18px; align-items: stretch; }
-            .summary-main { align-self: center; width: 170px; padding: 18px 20px; }
-            .summary-emoji { font-size: 44px; margin-bottom: 6px; }
-            .summary-score { font-size: 30px; margin-bottom: 4px; }
-            .summary-label { font-size: 13px; }
-            .summary-description { font-size: 13px; }
-            .summary-bar { height: 12px; }
-            .summary-breakdown { font-size: 12px; gap: 8px; }
-            .breakdown-bad, .breakdown-neutral, .breakdown-good { padding: 3px 8px; }
+        .tab-btn.active[data-tab="bad"] {
+            background: linear-gradient(135deg, #7f1d1d 0%, #4c1d1d 100%);
+            color: #fecaca;
+            box-shadow: 0 2px 12px rgba(248, 113, 113, 0.25);
+        }
+        .tab-btn.active[data-tab="good"] {
+            background: linear-gradient(135deg, #14532d 0%, #052e16 100%);
+            color: #86efac;
+            box-shadow: 0 2px 12px rgba(74, 222, 128, 0.25);
+        }
+        .tab-btn.active[data-tab="neutral"] {
+            background: linear-gradient(135deg, #1e3a5f 0%, #172a45 100%);
+            color: #93c5fd;
+            box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2);
+        }
 
-            .hero { padding: 20px 18px; }
-            .hero h2 { font-size: 19px; }
-            .hero-sub { font-size: 12px; }
-            .tab-btn { font-size: 12px; padding: 10px 6px; }
-            .tab-count { padding: 1px 6px; font-size: 11px; }
+        .tab-count {
+            display: inline-block; margin-left: 6px;
+            padding: 2px 9px; border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            font-size: 12px; font-weight: 700;
+        }
+        .tab-btn.active .tab-count {
+            background: rgba(255, 255, 255, 0.15);
+        }
 
-            .sig-card { padding: 14px; }
-            .sig-header { flex-direction: row; align-items: center; gap: 10px; margin-bottom: 10px; }
-            .sig-meta { flex: 1; min-width: 0; }
-            .sig-rule { font-size: 14px; }
-            .sig-score-box { align-self: center; min-width: 72px; padding: 8px 10px; }
-            .sig-score-emoji { font-size: 24px; margin-bottom: 2px; }
-            .sig-score-label { font-size: 10px; font-weight: 600; }
-            .sig-score-num { font-size: 9px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
 
-            .sig-title { font-size: 11px; padding: 6px 8px; }
-            .sig-explain { font-size: 13px; line-height: 1.55; }
-            .sig-dart-link { font-size: 12px; padding: 6px 10px; }
+        .sig-card {
+            background: #0f1419; padding: 16px;
+            border-radius: 10px; margin-bottom: 10px;
+            border-left: 4px solid #374151;
+        }
+        .sig-card.good { border-left-color: #4ade80; }
+        .sig-card.bad { border-left-color: #f87171; }
+        .sig-card.neutral { border-left-color: #60a5fa; }
 
-            .card { padding: 18px 16px; }
-            .card h2 { font-size: 17px; }
-            .exec-pay { font-size: 16px; }
-            .warning-note { font-size: 12px; padding: 10px 12px; line-height: 1.5; }
-            .empty { font-size: 13px; padding: 6px 0; }
-            .summary-description { font-size: 12.5px; line-height: 1.55; }
-            .sig-explain { font-size: 13px; line-height: 1.55; }
+        .sig-header {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; gap: 12px; margin-bottom: 8px;
+        }
+        .sig-meta { display: flex; flex-direction: column; gap: 2px; }
+        .sig-date { color: #9ca3af; font-size: 12px; }
+        .sig-rule { color: #e6e6e6; font-size: 15px; font-weight: 600; }
+
+        .sig-score-box {
+            text-align: center; padding: 10px 14px;
+            border-radius: 10px; background: #1f2937;
+            min-width: 88px;
+        }
+        .sig-score-emoji { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+        .sig-score-label { font-size: 13px; font-weight: 700; line-height: 1.2; }
+        .sig-card.good .sig-score-label { color: #4ade80; }
+        .sig-card.bad .sig-score-label { color: #f87171; }
+        .sig-card.neutral .sig-score-label { color: #9ca3af; }
+        .sig-score-num {
+            font-size: 11px; color: #6b7280;
+            margin-top: 4px; font-weight: 500;
+        }
+
+        .sig-title {
+            color: #d1d5db; font-size: 12px;
+            margin: 8px 0; padding: 8px 10px;
+            background: #1f2937; border-radius: 6px;
+            font-family: 'SF Mono', monospace;
+        }
+        .sig-explain {
+            color: #e6e6e6; font-size: 14px;
+            line-height: 1.65; padding: 4px 0;
         }
     </style>
 </head>
@@ -1800,6 +817,10 @@
             <div class="loading-hint">잠시만 기다려주세요. 평균 5~10초 소요됩니다.</div>
         </div>
     </div>
+
+    <!-- 분석 카드 짤 저장용 숨겨진 영역 -->
+    <div id="saveCardContainer" style="position: fixed; left: -9999px; top: 0; width: 720px; background: #0f1419; padding: 0;"></div>
+
     <div class="container">
         <header>
             <h1><a href="/" style="text-decoration: none; color: inherit; -webkit-text-fill-color: inherit;">🩻 DART X-RAY</a></h1>
@@ -1816,124 +837,126 @@
             </div>
             <button type="submit">분석하기</button>
         </form>
-        
-        {% if not result %}
 
-        {# ===== 🚨 위험 공시 TOP 5 ===== #}
-        {% if risk_disclosures and risk_disclosures|length > 0 %}
-        <div class="risk-section">
-            
-            {# ===== 메인 페이지 공유 바 ===== #}
-            <div class="home-share-bar">
-                <div class="home-share-info">
-                    <span class="home-share-label">🚨 위험 공시 알림을 친구에게도</span>
-                    <span class="home-share-hint">이 정보가 누군가에게 도움이 될 수 있어요</span>
-                </div>
-                <div class="home-share-actions">
-                    <button type="button" class="home-share-btn" id="homeCopyBtn" onclick="copyHomeUrl()">
-                        <span id="homeCopyBtnText">🔗 링크 복사</span>
-                    </button>
-                    <button type="button" class="home-share-btn home-share-btn-kakao" onclick="shareHomeKakao()">
-                        💬 카톡
-                    </button>
-                    <button type="button" class="home-share-btn home-share-btn-twitter" onclick="shareHomeTwitter()">
-                        🐦 트위터
-                    </button>
-                </div>
+        {% if not result %}
+        
+        {# ===== 메인 페이지 공유 바 ===== #}
+        {% if (risk_disclosures and risk_disclosures|length > 0) or (good_disclosures and good_disclosures|length > 0) %}
+        <div class="home-share-bar">
+            <div class="home-share-info">
+                <span class="home-share-label">🚨 오늘의 공시 알림을 친구에게도</span>
+                <span class="home-share-hint">이 정보가 누군가에게 도움이 될 수 있어요</span>
+            </div>
+            <div class="home-share-actions">
+                <button type="button" class="home-share-btn home-share-btn-save" onclick="saveHomeCard()">
+                    📸 분석 카드 저장
+                </button>
+                <button type="button" class="home-share-btn" id="homeCopyBtn" onclick="copyHomeUrl()">
+                    <span id="homeCopyBtnText">🔗 링크 복사</span>
+                </button>
+                <button type="button" class="home-share-btn home-share-btn-kakao" onclick="shareHomeKakao()">
+                    💬 카톡
+                </button>
+                <button type="button" class="home-share-btn home-share-btn-twitter" onclick="shareHomeTwitter()">
+                    🐦 트위터
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 호재 vs 악재 대결 구도 ===== #}
+        {% if (risk_disclosures and risk_disclosures|length > 0) or (good_disclosures and good_disclosures|length > 0) %}
+        <div class="battle-section">
+            <div class="battle-header">
+                <h2 class="battle-title">⚔️ 오늘의 공시 대결</h2>
+                <p class="battle-subtitle">최근 24시간 동안 시장에서 가장 주목받은 공시들</p>
             </div>
             
-            <div class="risk-header">
-                <h2 class="risk-title">🚨 오늘의 위험 공시 TOP {{ risk_disclosures|length }}</h2>
-                <p class="risk-subtitle">최근 24시간 동안 발생한 가장 위험한 공시들입니다</p>
-            </div>
-            <div class="risk-list">
-                {% for r in risk_disclosures %}
-                <a href="/?q={{ r.corp_name|urlencode }}" class="risk-card">
-                    <div class="risk-card-header">
-                        <div class="risk-card-score">
-                            <span class="risk-card-emoji">{{ r.score_emoji }}</span>
-                            <span class="risk-card-points">{{ r.score }}점</span>
-                            <span class="risk-card-label">{{ r.score_label }}</span>
-                        </div>
-                        <span class="risk-card-time">{{ r.time_ago }}</span>
+            <div class="battle-grid">
+                {# 호재 컬럼 #}
+                <div class="battle-column">
+                    <div class="battle-column-header battle-column-header-good">
+                        🔥 떡상 공시 TOP {{ good_disclosures|length if good_disclosures else 0 }}
                     </div>
-                    <div class="risk-card-company">
-                        <span class="risk-card-name">{{ r.corp_name }}</span>
-                        <span class="risk-card-code">{{ r.stock_code }}</span>
+                    <div class="battle-card-list">
+                        {% if good_disclosures and good_disclosures|length > 0 %}
+                            {% for g in good_disclosures %}
+                            <a href="/?q={{ g.corp_name|urlencode }}" class="battle-card battle-card-good">
+                                <div class="battle-card-header">
+                                    <span class="battle-card-score">{{ g.score_emoji }} +{{ g.score }}점</span>
+                                    <span class="battle-card-time">{{ g.time_ago }}</span>
+                                </div>
+                                <div class="battle-card-name">
+                                    {{ g.corp_name }}
+                                    <span class="battle-card-code">{{ g.stock_code }}</span>
+                                </div>
+                                <div class="battle-card-rule">{{ g.rule_title }}</div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="battle-empty">
+                                ☁️ 오늘은 호재 공시가 적은 날이네요
+                            </div>
+                        {% endif %}
                     </div>
-                    <div class="risk-card-rule">{{ r.rule_title }}</div>
-                    <div class="risk-card-explain">💡 {{ r.explain }}</div>
-                    <div class="risk-card-cta">분석 보기 →</div>
-                </a>
-                {% endfor %}
+                </div>
+                
+                {# 악재 컬럼 #}
+                <div class="battle-column">
+                    <div class="battle-column-header battle-column-header-bad">
+                        🚨 도망쳐 공시 TOP {{ risk_disclosures|length if risk_disclosures else 0 }}
+                    </div>
+                    <div class="battle-card-list">
+                        {% if risk_disclosures and risk_disclosures|length > 0 %}
+                            {% for r in risk_disclosures %}
+                            <a href="/?q={{ r.corp_name|urlencode }}" class="battle-card battle-card-bad">
+                                <div class="battle-card-header">
+                                    <span class="battle-card-score">{{ r.score_emoji }} {{ r.score }}점</span>
+                                    <span class="battle-card-time">{{ r.time_ago }}</span>
+                                </div>
+                                <div class="battle-card-name">
+                                    {{ r.corp_name }}
+                                    <span class="battle-card-code">{{ r.stock_code }}</span>
+                                </div>
+                                <div class="battle-card-rule">{{ r.rule_title }}</div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="battle-empty">
+                                🌙 오늘은 위험 공시가 적은 날이네요
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div class="risk-footer">
+            <div class="battle-footer">
                 ⏰ 10분마다 자동 업데이트 · ⚠️ 룰 베이스 자동 분석 (참고용)
             </div>
         </div>
         {% endif %}
-
-        <div class="landing">
-            <div class="landing-tagline">
+        
+        <div style="text-align: center; padding: 20px 0 40px;">
+            <div style="display: inline-block; padding: 8px 18px; background: #1e3a5f; color: #93c5fd; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 24px;">
                 💡 일반 투자자를 위한, VC 시각의 공시 분석 도구
             </div>
-
-            <div class="landing-features">
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <div class="feature-title">공시 50개+ 자동 해석</div>
-                    <div class="feature-desc">
-                        호재인지 악재인지 한눈에. 점수와 이모지로 30일치 공시를 정리해드립니다.
-                    </div>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🔬</div>
-                    <div class="feature-title">자금목적·시총 대비 심층 분석</div>
-                    <div class="feature-desc">
-                        같은 전환사채라도 운영자금이면 위험, 시설자금이면 안전.
-                        자사주도 시총 대비 0.1%면 의미 없음 — 이런 깊이 있는 해석이 자동.
-                    </div>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">💰</div>
-                    <div class="feature-title">배당·임원·전환사채 한 화면</div>
-                    <div class="feature-desc">
-                        100주 보유 시 배당 수령액부터 임원 보수, 전환사채 이력까지.
-                        흩어진 정보를 한 번에.
-                    </div>
-                </div>
-            </div>
-
-            <div class="landing-cta">
-                ↑ 위 검색창에 <strong>기업명, 종목코드, 고유번호</strong> 중 하나를 입력하세요
-            </div>
-
-            <div class="landing-disclaimer">
-                ⚠️ 본 도구는 투자 판단의 참고 자료이며, 투자 권유가 아닙니다.<br>
-                모든 데이터는 DART 전자공시시스템과 네이버 금융을 기반으로 합니다.
+            <div style="font-size: 14px; color: #9ca3af; padding: 14px 20px; background: #1a1f2e; border-radius: 10px; border: 1px dashed #374151;">
+                ↑ 위 검색창에 <strong style="color: #93c5fd;">기업명, 종목코드, 고유번호</strong> 중 하나를 입력하세요
             </div>
         </div>
         {% endif %}
+
         {% if result %}
             {% if result.error %}
-                <div class="error-card">
-                    <div class="error-icon">🔍</div>
-                    <div class="error-title">분석할 수 없습니다</div>
-                    <div class="error-message">{{ result.error }}</div>
-                    <div class="error-hint">
-                        💡 <strong>이렇게 시도해보세요:</strong><br>
-                        • 정확한 기업명으로 검색 (예: 삼성전자, SK하이닉스)<br>
-                        • 종목코드 6자리 입력 (예: 005930)<br>
-                        • 검색창 자동완성에서 선택
-                    </div>
+                <div style="background: #1f2937; padding: 32px 28px; border-radius: 12px; text-align: center; border-top: 3px solid #f87171;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🔍</div>
+                    <div style="font-size: 18px; font-weight: 700; color: #fecaca; margin-bottom: 8px;">분석할 수 없습니다</div>
+                    <div style="font-size: 14px; color: #d1d5db; margin-bottom: 20px;">{{ result.error }}</div>
                 </div>
             {% else %}
 
                 {# ===== 🎯 결론 카드 (두괄식, 최상단) ===== #}
                 {% if result.conclusion and result.conclusion.has_any_data %}
-                <div class="card conclusion-card conclusion-{{ result.conclusion.tone }}">
+                <div class="card conclusion-card conclusion-{{ result.conclusion.tone }}" id="conclusionCard">
                     <div class="conclusion-top">
                         <div class="conclusion-emoji">{{ result.conclusion.emoji }}</div>
                         <div class="conclusion-score-block">
@@ -1995,129 +1018,98 @@
                 {% endif %}
 
                 {% if result.stock %}
-                <div class="card stock-header">
-                    <div class="stock-top">
-                        <div class="stock-name-block">
-                            <div class="stock-name">{{ result.company }}</div>
-                            <div class="stock-meta">
-                                <span class="stock-badge">{{ result.stock.market }}</span>
-                                <span class="stock-code">{{ result.stock_code }}</span>
-                                {% if result.stock.industry %}
-                                    <span class="stock-sector">· {{ result.stock.industry }}</span>
-                                {% endif %}
+                <div class="card" style="padding: 24px 28px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-size: 24px; font-weight: 700; color: #e6e6e6; margin-bottom: 4px;">{{ result.company }}</div>
+                            <div style="display: flex; gap: 8px; align-items: center; font-size: 13px; color: #9ca3af; flex-wrap: wrap;">
+                                <span style="background: #1e3a5f; color: #93c5fd; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">{{ result.stock.market }}</span>
+                                <span style="font-family: 'SF Mono', monospace;">{{ result.stock_code }}</span>
                             </div>
                         </div>
-                        <div class="stock-price-block {{ result.stock.direction }}">
-                            <div class="stock-price">{{ result.stock.price_fmt }}<span class="krw">원</span></div>
-                            <div class="stock-change">
+                        <div style="text-align: right;">
+                            <div style="font-size: 28px; font-weight: 700; color: {% if result.stock.direction == 'up' %}#f87171{% elif result.stock.direction == 'down' %}#60a5fa{% else %}#e6e6e6{% endif %}; line-height: 1;">
+                                {{ result.stock.price_fmt }}<span style="font-size: 14px; font-weight: 500; color: #9ca3af; margin-left: 4px;">원</span>
+                            </div>
+                            <div style="margin-top: 6px; font-size: 14px; font-weight: 600; color: {% if result.stock.direction == 'up' %}#f87171{% elif result.stock.direction == 'down' %}#60a5fa{% else %}#9ca3af{% endif %};">
                                 {{ result.stock.change_fmt }}원 ({{ result.stock.change_pct_fmt }})
                             </div>
                         </div>
                     </div>
-
-                    {# ===== 미니 정보 박스 행 (점수 + 차트) - 항상 표시 ===== #}
-                    {% if result.chart or result.summary %}
-                    <div class="mini-info-row">
-                        {# === 공시 점수 박스 (공시 있을 때 + 없을 때 분기) === #}
+                    
+                    {% if result.summary and result.summary.count > 0 or result.chart and result.chart.points %}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 14px 0;">
                         {% if result.summary and result.summary.count > 0 %}
-                            <a href="#summary-card" class="mini-score-box mini-score-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
-                                <div class="mini-score-left">
-                                    <div class="mini-score-emoji">{{ result.summary.emoji }}</div>
-                                </div>
-                                <div class="mini-score-right">
-                                    <div class="mini-score-label">📊 공시 점수 (30일)</div>
-                                    <div class="mini-score-value">{{ result.summary.total_score_fmt }}점 <span class="mini-score-tag">{{ result.summary.label }}</span></div>
-                                    <div class="mini-score-detail">호재 {{ result.summary.good_ct }} · 악재 {{ result.summary.bad_ct }} · 일반 {{ result.summary.neutral_ct }}</div>
+                            <a href="#summary-card" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #0f1419; border-radius: 10px; border-left: 3px solid {% if result.summary.total_score >= 1.5 %}#4ade80{% elif result.summary.total_score <= -1.5 %}#f87171{% else %}#60a5fa{% endif %}; text-decoration: none; color: inherit;">
+                                <div style="font-size: 32px; line-height: 1;">{{ result.summary.emoji }}</div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: #9ca3af; font-weight: 600; margin-bottom: 4px;">📊 공시 점수 (30일)</div>
+                                    <div style="font-size: 18px; font-weight: 700; line-height: 1.1; margin-bottom: 2px; color: {% if result.summary.total_score >= 1.5 %}#4ade80{% elif result.summary.total_score <= -1.5 %}#f87171{% else %}#93c5fd{% endif %};">{{ result.summary.total_score_fmt }}점</div>
+                                    <div style="font-size: 11px; color: #6b7280; font-weight: 500;">호재 {{ result.summary.good_ct }} · 악재 {{ result.summary.bad_ct }} · 일반 {{ result.summary.neutral_ct }}</div>
                                 </div>
                             </a>
                         {% else %}
-                            <div class="mini-score-box mini-score-empty">
-                                <div class="mini-score-left">
-                                    <div class="mini-score-emoji">🌙</div>
-                                </div>
-                                <div class="mini-score-right">
-                                    <div class="mini-score-label">📊 공시 점수 (30일)</div>
-                                    <div class="mini-score-value-empty">공시 없음</div>
-                                    <div class="mini-score-detail">30일간 공시 0건</div>
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #0f1419; border-radius: 10px; border-left: 3px solid #4b5563; opacity: 0.9;">
+                                <div style="font-size: 32px; line-height: 1; opacity: 0.7;">🌙</div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: #9ca3af; font-weight: 600; margin-bottom: 4px;">📊 공시 점수 (30일)</div>
+                                    <div style="font-size: 16px; font-weight: 700; color: #9ca3af;">공시 없음</div>
+                                    <div style="font-size: 11px; color: #6b7280;">30일간 공시 0건</div>
                                 </div>
                             </div>
                         {% endif %}
 
-                        {# === 주가 차트 박스 === #}
                         {% if result.chart and result.chart.points %}
-                            <div class="mini-chart-box">
-                                <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
-                                <div class="mini-chart-svg-wrap">
-                                    <svg viewBox="0 0 300 60" preserveAspectRatio="none" class="mini-chart-svg">
-                                        <defs>
-                                            <linearGradient id="chartFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                <stop offset="0%" stop-color="{{ result.chart.color }}" stop-opacity="0.35"/>
-                                                <stop offset="100%" stop-color="{{ result.chart.color }}" stop-opacity="0"/>
-                                            </linearGradient>
-                                        </defs>
-                                        <path d="{{ result.chart.area_path }}" fill="url(#chartFillGrad)" stroke="none"/>
-                                        <path d="{{ result.chart.line_path }}" fill="none" stroke="{{ result.chart.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="{{ result.chart.last_x }}" cy="{{ result.chart.last_y }}" r="3" fill="{{ result.chart.color }}"/>
-                                    </svg>
-                                </div>
-                                <div class="mini-chart-meta">
-                                    <span class="mini-chart-period">{{ result.chart.start_date }} → {{ result.chart.end_date }}</span>
-                                    <span class="mini-chart-change mini-chart-{{ result.chart.direction }}">{{ result.chart.change_pct_fmt }}</span>
-                                </div>
+                        <div style="padding: 14px 16px; background: #0f1419; border-radius: 10px; border-left: 3px solid #60a5fa;">
+                            <div style="font-size: 11px; color: #9ca3af; font-weight: 600; margin-bottom: 6px;">📈 주가 추이 (1개월)</div>
+                            <svg viewBox="0 0 300 60" preserveAspectRatio="none" style="width: 100%; height: 50px;">
+                                <defs>
+                                    <linearGradient id="chartFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="{{ result.chart.color }}" stop-opacity="0.35"/>
+                                        <stop offset="100%" stop-color="{{ result.chart.color }}" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="{{ result.chart.area_path }}" fill="url(#chartFillGrad)"/>
+                                <path d="{{ result.chart.line_path }}" fill="none" stroke="{{ result.chart.color }}" stroke-width="2" stroke-linecap="round"/>
+                                <circle cx="{{ result.chart.last_x }}" cy="{{ result.chart.last_y }}" r="3" fill="{{ result.chart.color }}"/>
+                            </svg>
+                            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #6b7280; margin-top: 4px;">
+                                <span>{{ result.chart.start_date }} → {{ result.chart.end_date }}</span>
+                                <span style="font-weight: 700; font-size: 12px; color: {% if result.chart.direction == 'up' %}#f87171{% elif result.chart.direction == 'down' %}#60a5fa{% else %}#9ca3af{% endif %};">{{ result.chart.change_pct_fmt }}</span>
                             </div>
-                        {% else %}
-                            <div class="mini-chart-box mini-chart-empty">
-                                <div class="mini-chart-label">📈 주가 추이 (1개월)</div>
-                                <div class="mini-chart-empty-content">
-                                    <div class="mini-chart-empty-icon">📊</div>
-                                    <div class="mini-chart-empty-text">차트 데이터<br>일시적 불러올 수 없음</div>
-                                </div>
-                            </div>
+                        </div>
                         {% endif %}
                     </div>
                     {% endif %}
 
-                    <div class="stock-stats">
+                    <div style="display: flex; gap: 24px; padding: 12px 0; border-top: 1px solid #374151; flex-wrap: wrap;">
                         {% if result.stock.market_cap_fmt != '-' %}
-                            <div class="stat-mini">
-                                <span class="stat-mini-label">시가총액</span>
-                                <span class="stat-mini-value">{{ result.stock.market_cap_fmt }}</span>
-                            </div>
-                        {% endif %}
-                        {% if result.stock.volume %}
-                            <div class="stat-mini">
-                                <span class="stat-mini-label">거래량</span>
-                                <span class="stat-mini-value">{{ "{:,}".format(result.stock.volume) }}</span>
-                            </div>
+                        <div>
+                            <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">시가총액</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #e6e6e6;">{{ result.stock.market_cap_fmt }}</div>
+                        </div>
                         {% endif %}
                         {% if result.stock.prev_close %}
-                            <div class="stat-mini">
-                                <span class="stat-mini-label">전일 종가</span>
-                                <span class="stat-mini-value">{{ "{:,.0f}".format(result.stock.prev_close) }}원</span>
-                            </div>
+                        <div>
+                            <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">전일 종가</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #e6e6e6;">{{ "{:,.0f}".format(result.stock.prev_close) }}원</div>
+                        </div>
                         {% endif %}
                     </div>
-                    <div class="stock-footnote">네이버 금융 · 약 15분 지연</div>
-                </div>
-                {% elif result.stock_code %}
-                <div class="card stock-header">
-                    <div class="stock-name-block">
-                        <div class="stock-name">{{ result.company }}</div>
-                        <div class="stock-meta">
-                            <span class="stock-code">{{ result.stock_code }}</span>
-                        </div>
-                    </div>
-                    <div class="stock-footnote" style="margin-top:12px;">⚠️ 실시간 주가를 일시적으로 불러올 수 없습니다.</div>
+                    <div style="font-size: 11px; color: #6b7280; margin-top: 8px; text-align: right;">네이버 금융 · 약 15분 지연</div>
                 </div>
                 {% endif %}
 
-                {# ===== 공유 버튼 ===== #}
+                {# ===== 공유 바 (분석 카드 저장 포함) ===== #}
                 <div class="share-bar">
                     <div class="share-info">
                         <span class="share-label">📊 분석 결과 공유하기</span>
                         <span class="share-url" id="shareUrl"></span>
                     </div>
                     <div class="share-actions">
+                        <button type="button" class="share-btn share-btn-save" onclick="saveAnalysisCard()">
+                            📸 분석 카드 저장
+                        </button>
                         <button type="button" class="share-btn" id="copyBtn" onclick="copyShareUrl()">
                             <span id="copyBtnText">🔗 링크 복사</span>
                         </button>
@@ -2128,31 +1120,13 @@
                 </div>
 
                 {% if result.summary and result.summary.count > 0 %}
-                <div id="summary-card" class="card summary-card summary-{% if result.summary.total_score >= 1.5 %}good{% elif result.summary.total_score <= -1.5 %}bad{% else %}neutral{% endif %}">
-                    <div class="summary-title">📊 최근 30일 공시 종합</div>
-                    <div class="summary-body">
-                        <div class="summary-main">
-                            <div class="summary-emoji">{{ result.summary.emoji }}</div>
-                            <div class="summary-score">{{ result.summary.total_score_fmt }}점</div>
-                            <div class="summary-label">{{ result.summary.label }}</div>
-                        </div>
-                        <div class="summary-detail">
-                            <div class="summary-description">{{ result.summary.description }}</div>
-                            <div class="summary-bar">
-                                <div class="bar-bad" style="width: {{ result.summary.bad_ratio }}%"></div>
-                                <div class="bar-neutral" style="width: {{ result.summary.neutral_ratio }}%"></div>
-                                <div class="bar-good" style="width: {{ result.summary.good_ratio }}%"></div>
-                            </div>
-                            <div class="summary-breakdown">
-                                <span class="breakdown-bad">악재 {{ result.summary.bad_ct }}</span>
-                                <span class="breakdown-neutral">일반 {{ result.summary.neutral_ct }}</span>
-                                <span class="breakdown-good">호재 {{ result.summary.good_ct }}</span>
-                                <span class="breakdown-total">· 총 {{ result.summary.count }}건</span>
-                            </div>
-                            <div class="summary-warn-mini">
-                                ⚠️ 본 점수는 공시 제목 기반의 자동 분석이며, 투자 판단의 참고 자료입니다. 실제 매매 결정 전 DART 원문과 재무제표를 직접 확인하세요.
-                            </div>
-                        </div>
+                <div id="summary-card" class="card" style="padding: 24px; border-left: 4px solid {% if result.summary.total_score >= 1.5 %}#4ade80{% elif result.summary.total_score <= -1.5 %}#f87171{% else %}#60a5fa{% endif %};">
+                    <div style="font-size: 14px; color: #9ca3af; font-weight: 600; margin-bottom: 16px;">📊 최근 30일 공시 종합</div>
+                    <div style="display: flex; gap: 14px; font-size: 13px; flex-wrap: wrap; font-weight: 700;">
+                        <span style="color: #fca5a5; padding: 4px 10px; background: rgba(248, 113, 113, 0.12); border-radius: 6px;">악재 {{ result.summary.bad_ct }}</span>
+                        <span style="color: #d1d5db; padding: 4px 10px; background: rgba(156, 163, 175, 0.1); border-radius: 6px;">일반 {{ result.summary.neutral_ct }}</span>
+                        <span style="color: #86efac; padding: 4px 10px; background: rgba(74, 222, 128, 0.12); border-radius: 6px;">호재 {{ result.summary.good_ct }}</span>
+                        <span style="color: #6b7280; font-weight: 500; align-self: center;">· 총 {{ result.summary.count }}건</span>
                     </div>
                 </div>
                 {% endif %}
@@ -2162,13 +1136,9 @@
                     <p class="hero-sub">공시 제목을 해석해 왜 호재/악재인지 설명해드립니다.</p>
 
                     {% if (result.signals_bad|length + result.signals_good|length + result.signals_neutral|length) == 0 %}
-                    <div class="all-empty-notice">
-                        <div class="all-empty-notice-icon">🌙</div>
-                        <div class="all-empty-notice-title">최근 30일간 공시가 없습니다</div>
-                        <div class="all-empty-notice-desc">
-                            이 기업은 지난 30일 동안 DART에 공시한 내역이 없습니다.<br>
-                            신규 상장사이거나 공시 활동이 적은 기업일 수 있습니다.
-                        </div>
+                    <div style="text-align: center; padding: 32px 24px; background: #1a1f2e; border-radius: 10px; border: 1px dashed #374151;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">🌙</div>
+                        <div style="font-size: 16px; font-weight: 600; color: #93c5fd; margin-bottom: 6px;">최근 30일간 공시가 없습니다</div>
                     </div>
                     {% else %}
 
@@ -2185,335 +1155,167 @@
                     </div>
 
                     <div class="tab-panel active" data-panel="bad">
-                        {% if result.signals_bad %}
-                            {% for s in result.signals_bad %}
-                                <div class="sig-card bad">
-                                    <div class="sig-header">
-                                        <div class="sig-meta">
-                                            <span class="sig-date">{{ s.date }}</span>
-                                            <span class="sig-rule">{{ s.rule_title }}</span>
-                                        </div>
-                                        <div class="sig-score-box">
-                                            <div class="sig-score-emoji">{{ s.score_emoji }}</div>
-                                            <div class="sig-score-label">{{ s.score_label }}</div>
-                                            <div class="sig-score-num">{{ '+' if s.score > 0 else '' }}{{ s.score }}점</div>
-                                        </div>
+                        {% for s in result.signals_bad %}
+                            <div class="sig-card bad">
+                                <div class="sig-header">
+                                    <div class="sig-meta">
+                                        <span class="sig-date">{{ s.date }}</span>
+                                        <span class="sig-rule">{{ s.rule_title }}</span>
                                     </div>
-                                    <div class="sig-title">{{ s.title }}</div>
-                                    <div class="sig-explain">💡 {{ s.explain }}</div>
-
-                                    {% if s.cb_analysis %}
-                                        <div class="cb-analysis">
-                                            <div class="cb-header">
-                                                <span class="cb-title">🔬 자금목적 심층 분석</span>
-                                                <span class="cb-summary">{{ s.cb_analysis.summary }}</span>
-                                            </div>
-                                            {% if s.cb_analysis.warnings %}
-                                                <ul class="cb-warnings">
-                                                    {% for w in s.cb_analysis.warnings %}
-                                                        <li>{{ w }}</li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
-                                            <div class="cb-ratios">
-                                                <div class="cb-ratio-label">자금 구성</div>
-                                                <div class="cb-ratio-bar">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>{% endif %}
-                                                </div>
-                                                <div class="cb-ratio-legend">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>{% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endif %}
-
-                                    {% if s.treasury_analysis %}
-                                        <div class="treasury-analysis {{ s.treasury_analysis.action }}">
-                                            <div class="treasury-header">
-                                                <span class="treasury-title">🔬 시총 대비 분석</span>
-                                                <span class="treasury-tier-badge">{{ s.treasury_analysis.tier }}</span>
-                                            </div>
-                                            <div class="treasury-summary">{{ s.treasury_analysis.summary }}</div>
-                                            {% if s.treasury_analysis.warnings %}
-                                                <ul class="treasury-warnings">
-                                                    {% for w in s.treasury_analysis.warnings %}
-                                                        <li>{{ w }}</li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-
-                                    {% if s.dart_url %}
-                                        <a class="sig-dart-link" href="{{ s.dart_url }}" target="_blank" rel="noopener">
-                                            📄 DART 원문 보기 →
-                                        </a>
-                                    {% endif %}
+                                    <div class="sig-score-box">
+                                        <div class="sig-score-emoji">{{ s.score_emoji }}</div>
+                                        <div class="sig-score-label">{{ s.score_label }}</div>
+                                        <div class="sig-score-num">{{ '+' if s.score > 0 else '' }}{{ s.score }}점</div>
+                                    </div>
                                 </div>
-                            {% endfor %}
+                                <div class="sig-title">{{ s.title }}</div>
+                                <div class="sig-explain">💡 {{ s.explain }}</div>
+                                {% if s.dart_url %}
+                                    <a style="display: inline-block; margin-top: 12px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: #93c5fd; background: #1e3a5f; border-radius: 6px; text-decoration: none;" href="{{ s.dart_url }}" target="_blank" rel="noopener">
+                                        📄 DART 원문 보기 →
+                                    </a>
+                                {% endif %}
+                            </div>
                         {% else %}
-                            <div class="empty">최근 30일간 악재 공시가 없습니다.</div>
-                        {% endif %}
+                            <div style="color: #9ca3af; font-style: italic; padding: 8px 0;">최근 30일간 악재 공시가 없습니다.</div>
+                        {% endfor %}
                     </div>
 
                     <div class="tab-panel" data-panel="good">
-                        {% if result.signals_good %}
-                            {% for s in result.signals_good %}
-                                <div class="sig-card good">
-                                    <div class="sig-header">
-                                        <div class="sig-meta">
-                                            <span class="sig-date">{{ s.date }}</span>
-                                            <span class="sig-rule">{{ s.rule_title }}</span>
-                                        </div>
-                                        <div class="sig-score-box">
-                                            <div class="sig-score-emoji">{{ s.score_emoji }}</div>
-                                            <div class="sig-score-label">{{ s.score_label }}</div>
-                                            <div class="sig-score-num">{{ '+' if s.score > 0 else '' }}{{ s.score }}점</div>
-                                        </div>
+                        {% for s in result.signals_good %}
+                            <div class="sig-card good">
+                                <div class="sig-header">
+                                    <div class="sig-meta">
+                                        <span class="sig-date">{{ s.date }}</span>
+                                        <span class="sig-rule">{{ s.rule_title }}</span>
                                     </div>
-                                    <div class="sig-title">{{ s.title }}</div>
-                                    <div class="sig-explain">💡 {{ s.explain }}</div>
-
-                                    {% if s.cb_analysis %}
-                                        <div class="cb-analysis">
-                                            <div class="cb-header">
-                                                <span class="cb-title">🔬 자금목적 심층 분석</span>
-                                                <span class="cb-summary">{{ s.cb_analysis.summary }}</span>
-                                            </div>
-                                            {% if s.cb_analysis.warnings %}
-                                                <ul class="cb-warnings">
-                                                    {% for w in s.cb_analysis.warnings %}
-                                                        <li>{{ w }}</li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
-                                            <div class="cb-ratios">
-                                                <div class="cb-ratio-label">자금 구성</div>
-                                                <div class="cb-ratio-bar">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>{% endif %}
-                                                </div>
-                                                <div class="cb-ratio-legend">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>{% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endif %}
-
-                                    {% if s.treasury_analysis %}
-                                        <div class="treasury-analysis {{ s.treasury_analysis.action }}">
-                                            <div class="treasury-header">
-                                                <span class="treasury-title">🔬 시총 대비 분석</span>
-                                                <span class="treasury-tier-badge">{{ s.treasury_analysis.tier }}</span>
-                                            </div>
-                                            <div class="treasury-summary">{{ s.treasury_analysis.summary }}</div>
-                                            {% if s.treasury_analysis.warnings %}
-                                                <ul class="treasury-warnings">
-                                                    {% for w in s.treasury_analysis.warnings %}
-                                                        <li>{{ w }}</li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-
-                                    {% if s.dart_url %}
-                                        <a class="sig-dart-link" href="{{ s.dart_url }}" target="_blank" rel="noopener">
-                                            📄 DART 원문 보기 →
-                                        </a>
-                                    {% endif %}
+                                    <div class="sig-score-box">
+                                        <div class="sig-score-emoji">{{ s.score_emoji }}</div>
+                                        <div class="sig-score-label">{{ s.score_label }}</div>
+                                        <div class="sig-score-num">{{ '+' if s.score > 0 else '' }}{{ s.score }}점</div>
+                                    </div>
                                 </div>
-                            {% endfor %}
+                                <div class="sig-title">{{ s.title }}</div>
+                                <div class="sig-explain">💡 {{ s.explain }}</div>
+                                {% if s.dart_url %}
+                                    <a style="display: inline-block; margin-top: 12px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: #93c5fd; background: #1e3a5f; border-radius: 6px; text-decoration: none;" href="{{ s.dart_url }}" target="_blank" rel="noopener">
+                                        📄 DART 원문 보기 →
+                                    </a>
+                                {% endif %}
+                            </div>
                         {% else %}
-                            <div class="empty">최근 30일간 호재 공시가 없습니다.</div>
-                        {% endif %}
+                            <div style="color: #9ca3af; font-style: italic; padding: 8px 0;">최근 30일간 호재 공시가 없습니다.</div>
+                        {% endfor %}
                     </div>
 
                     <div class="tab-panel" data-panel="neutral">
-                        {% if result.signals_neutral %}
-                            {% for s in result.signals_neutral %}
-                                <div class="sig-card neutral">
-                                    <div class="sig-header">
-                                        <div class="sig-meta">
-                                            <span class="sig-date">{{ s.date }}</span>
-                                            <span class="sig-rule">{{ s.rule_title }}</span>
-                                        </div>
-                                        <div class="sig-score-box">
-                                            <div class="sig-score-emoji">{{ s.score_emoji }}</div>
-                                            <div class="sig-score-label">{{ s.score_label }}</div>
-                                            <div class="sig-score-num">{{ '+' if s.score > 0 else '' }}{{ s.score }}점</div>
-                                        </div>
+                        {% for s in result.signals_neutral %}
+                            <div class="sig-card neutral">
+                                <div class="sig-header">
+                                    <div class="sig-meta">
+                                        <span class="sig-date">{{ s.date }}</span>
+                                        <span class="sig-rule">{{ s.rule_title }}</span>
                                     </div>
-                                    <div class="sig-title">{{ s.title }}</div>
-                                    <div class="sig-explain">💡 {{ s.explain }}</div>
-
-                                    {% if s.cb_analysis %}
-                                        <div class="cb-analysis">
-                                            <div class="cb-header">
-                                                <span class="cb-title">🔬 자금목적 심층 분석</span>
-                                                <span class="cb-summary">{{ s.cb_analysis.summary }}</span>
-                                            </div>
-                                            {% if s.cb_analysis.warnings %}
-                                                <ul class="cb-warnings">
-                                                    {% for w in s.cb_analysis.warnings %}
-                                                        <li>{{ w }}</li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
-                                            <div class="cb-ratios">
-                                                <div class="cb-ratio-label">자금 구성</div>
-                                                <div class="cb-ratio-bar">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<div class="bar-fclt" style="width: {{ s.cb_analysis.purposes_detail['시설자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<div class="bar-op" style="width: {{ s.cb_analysis.purposes_detail['운영자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<div class="bar-debt" style="width: {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<div class="bar-other-stk" style="width: {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<div class="bar-biz-acq" style="width: {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%"></div>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<div class="bar-etc" style="width: {{ s.cb_analysis.purposes_detail['기타자금'] }}%"></div>{% endif %}
-                                                </div>
-                                                <div class="cb-ratio-legend">
-                                                    {% if s.cb_analysis.purposes_detail['시설자금'] > 0 %}<span><span class="dot-fclt"></span>시설 {{ s.cb_analysis.purposes_detail['시설자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['운영자금'] > 0 %}<span><span class="dot-op"></span>운영 {{ s.cb_analysis.purposes_detail['운영자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['채무상환자금'] > 0 %}<span><span class="dot-debt"></span>채무상환 {{ s.cb_analysis.purposes_detail['채무상환자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['타법인증권취득'] > 0 %}<span><span class="dot-other-stk"></span>타법인취득 {{ s.cb_analysis.purposes_detail['타법인증권취득'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['영업양수자금'] > 0 %}<span><span class="dot-biz-acq"></span>영업양수 {{ s.cb_analysis.purposes_detail['영업양수자금'] }}%</span>{% endif %}
-                                                    {% if s.cb_analysis.purposes_detail['기타자금'] > 0 %}<span><span class="dot-etc"></span>기타 {{ s.cb_analysis.purposes_detail['기타자금'] }}%</span>{% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endif %}
-
-                                    {% if s.treasury_analysis %}
-                                        <div class="treasury-analysis {{ s.treasury_analysis.action }}">
-                                            <div class="treasury-header">
-                                                <span class="treasury-title">🔬 시총 대비 분석</span>
-                                                <span class="treasury-tier-badge">{{ s.treasury_analysis.tier }}</span>
-                                            </div>
-                                            <div class="treasury-summary">{{ s.treasury_analysis.summary }}</div>
-                                            {% if s.treasury_analysis.warnings %}
-                                                <ul class="treasury-warnings">
-                                                    {% for w in s.treasury_analysis.warnings %}
-                                                        <li>{{ w }}</li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-
-                                    {% if s.dart_url %}
-                                        <a class="sig-dart-link" href="{{ s.dart_url }}" target="_blank" rel="noopener">
-                                            📄 DART 원문 보기 →
-                                        </a>
-                                    {% endif %}
+                                    <div class="sig-score-box">
+                                        <div class="sig-score-emoji">{{ s.score_emoji }}</div>
+                                        <div class="sig-score-label">{{ s.score_label }}</div>
+                                        <div class="sig-score-num">{{ '+' if s.score > 0 else '' }}{{ s.score }}점</div>
+                                    </div>
                                 </div>
-                            {% endfor %}
+                                <div class="sig-title">{{ s.title }}</div>
+                                <div class="sig-explain">💡 {{ s.explain }}</div>
+                            </div>
                         {% else %}
-                            <div class="empty">최근 30일간 일반 공시가 없습니다.</div>
-                        {% endif %}
+                            <div style="color: #9ca3af; font-style: italic; padding: 8px 0;">최근 30일간 일반 공시가 없습니다.</div>
+                        {% endfor %}
                     </div>
                     {% endif %}
                 </div>
 
+                {# ===== 💰 배당 분석 카드 ===== #}
                 <div class="card">
                     <h2>💰 배당 분석 ({{ result.dividends.year }}년 사업보고서 기준)</h2>
-
-                    {% if result.dividends.amount_per_100 != '-' %}
-                    <div class="div-kpi-row">
-                        <div class="div-kpi-box">
-                            <div class="div-kpi-label">100주 보유 시 연간 수령액 ({{ result.dividends.year }}년 기준)</div>
-                            <div class="div-kpi-value">{{ result.dividends.amount_per_100 }}</div>
-                            <div class="div-kpi-sub">주당 {{ result.dividends.per_share_now }}원 × 100주</div>
+                    
+                    {% if result.dividends.amount_per_100 and result.dividends.amount_per_100 != '-' %}
+                    <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px; padding: 16px 18px; background: #0f1419; border-radius: 10px; border-left: 3px solid #fbbf24;">
+                            <div style="font-size: 12px; color: #9ca3af; margin-bottom: 6px; font-weight: 600;">100주 보유 시 연간 수령액 ({{ result.dividends.year }}년 기준)</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #fbbf24; line-height: 1.1; margin-bottom: 4px;">{{ result.dividends.amount_per_100 }}</div>
+                            <div style="font-size: 12px; color: #6b7280;">주당 {{ result.dividends.per_share_now }}원 × 100주</div>
                         </div>
                         {% if result.dividends.yield_pct is not none %}
-                        <div class="div-kpi-box">
-                            <div class="div-kpi-label">배당수익률 ({{ result.dividends.year }}년 배당 ÷ 현재가)</div>
-                            <div class="div-kpi-value">{{ result.dividends.yield_pct }}%</div>
-                            <div class="div-kpi-sub">현재가 대비</div>
+                        <div style="flex: 1; min-width: 200px; padding: 16px 18px; background: #0f1419; border-radius: 10px; border-left: 3px solid #fbbf24;">
+                            <div style="font-size: 12px; color: #9ca3af; margin-bottom: 6px; font-weight: 600;">배당수익률 ({{ result.dividends.year }}년 배당 ÷ 현재가)</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #fbbf24; line-height: 1.1; margin-bottom: 4px;">{{ result.dividends.yield_pct }}%</div>
+                            <div style="font-size: 12px; color: #6b7280;">현재가 대비</div>
                         </div>
                         {% endif %}
                     </div>
                     {% endif %}
 
-                    <div class="stat">
-                        <span class="stat-label">주당 현금배당금 (당기)</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span style="color: #9ca3af;">주당 현금배당금 (당기)</span>
                         <span>{{ result.dividends.per_share_now }}원</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">주당 현금배당금 (전기)</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span style="color: #9ca3af;">주당 현금배당금 (전기)</span>
                         <span>{{ result.dividends.per_share_prev }}원</span>
                     </div>
                     {% if result.dividends.yoy is not none %}
-                        <div class="stat">
-                            <span class="stat-label">전년 대비</span>
-                            <span class="{% if result.dividends.yoy > 0 %}yoy-up{% elif result.dividends.yoy < 0 %}yoy-down{% endif %}">
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                            <span style="color: #9ca3af;">전년 대비</span>
+                            <span style="color: {% if result.dividends.yoy > 0 %}#4ade80{% elif result.dividends.yoy < 0 %}#f87171{% else %}#e6e6e6{% endif %};">
                                 {{ '+' if result.dividends.yoy > 0 else '' }}{{ result.dividends.yoy }}%
                             </span>
                         </div>
                     {% endif %}
-                    <div class="stat">
-                        <span class="stat-label">현금배당성향 (당기)</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span style="color: #9ca3af;">현금배당성향 (당기)</span>
                         <span>{{ result.dividends.payout_now }}%</span>
                     </div>
-                    <div class="stat">
-                        <span class="stat-label">현금배당성향 (전기)</span>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                        <span style="color: #9ca3af;">현금배당성향 (전기)</span>
                         <span>{{ result.dividends.payout_prev }}%</span>
                     </div>
-                    <div class="div-disclaimer">
+                    
+                    <div style="margin-top: 16px; padding: 10px 14px; background: #1a1f2e; border-radius: 6px; font-size: 12px; color: #9ca3af; line-height: 1.5;">
                         ℹ️ 사업보고서 기준 연간 배당 데이터입니다. 분기/반기 배당사의 경우 정확한 회차별 금액은 DART 공시를 확인하세요.
                     </div>
 
                     {% if result.dividends.year == '-' %}
-                        <div class="empty-card">
-                            <div class="empty-card-icon">📊</div>
-                            <div class="empty-card-title">배당 데이터 없음</div>
-                            <div class="empty-card-desc">
-                                무배당 기업이거나, 사업보고서가 아직 공시되지 않았습니다.<br>
-                                신규 상장사의 경우 첫 사업보고서 공시 후 데이터가 표시됩니다.
+                        <div style="text-align: center; padding: 40px 24px; background: #0f1419; border-radius: 10px; margin: 8px 0;">
+                            <div style="font-size: 40px; margin-bottom: 10px;">📊</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #d1d5db; margin-bottom: 6px;">배당 데이터 없음</div>
+                            <div style="font-size: 13px; color: #6b7280; line-height: 1.6;">
+                                무배당 기업이거나, 사업보고서가 아직 공시되지 않았습니다.
                             </div>
                         </div>
                     {% endif %}
                 </div>
 
+                {# ===== 👔 임원 보수 카드 ===== #}
                 <div class="card">
                     <h2>👔 임원 보수 (5억원 이상)</h2>
-                    <div class="warning-note">
+                    <div style="background: #422006; color: #fcd34d; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px;">
                         ⚠️ 보수총액에는 퇴직금·스톡옵션 행사이익이 포함될 수 있습니다.
                     </div>
                     {% set valid_execs = result.executives | selectattr('name', 'ne', '-') | selectattr('name', 'ne', '') | list if result.executives else [] %}
                     {% if valid_execs %}
                         {% for e in valid_execs %}
-                            <div class="exec">
-                                <span class="exec-name">{{ e.name }}</span>
-                                <span class="exec-position">{{ e.position }}</span>
-                                <div class="exec-pay">{{ e.total }}원</div>
+                            <div style="padding: 12px 0; border-bottom: 1px solid #374151;">
+                                <span style="font-weight: 600;">{{ e.name }}</span>
+                                <span style="color: #9ca3af; font-size: 13px; margin-left: 8px;">{{ e.position }}</span>
+                                <div style="color: #fbbf24; font-size: 18px; margin-top: 4px;">{{ e.total }}원</div>
                                 {% if e.excluded and e.excluded not in ['-', '0', ''] %}
-                                    <div class="exec-excluded">총액 외 보수: {{ e.excluded }}원 (퇴직금 의심)</div>
+                                    <div style="color: #f87171; font-size: 12px; margin-top: 4px;">총액 외 보수: {{ e.excluded }}원 (퇴직금 의심)</div>
                                 {% endif %}
                             </div>
                         {% endfor %}
                     {% else %}
-                        <div class="empty-card">
-                            <div class="empty-card-icon">👤</div>
-                            <div class="empty-card-title">5억원 이상 보수자 없음</div>
-                            <div class="empty-card-desc">
+                        <div style="text-align: center; padding: 40px 24px; background: #0f1419; border-radius: 10px;">
+                            <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #d1d5db; margin-bottom: 6px;">5억원 이상 보수자 없음</div>
+                            <div style="font-size: 13px; color: #6b7280; line-height: 1.6;">
                                 연 5억원 이상 받는 임원이 없거나,<br>
                                 사업보고서 데이터가 아직 공시되지 않았습니다.
                             </div>
@@ -2521,23 +1323,24 @@
                     {% endif %}
                 </div>
 
+                {# ===== 📜 전환사채 이력 카드 ===== #}
                 <div class="card">
                     <h2>📜 전환사채 이력 (최근 3년)</h2>
                     {% if result.cb_none %}
-                        <div class="empty-card">
-                            <div class="empty-card-icon">✨</div>
-                            <div class="empty-card-title">전환사채 발행 이력 없음</div>
-                            <div class="empty-card-desc">
+                        <div style="text-align: center; padding: 40px 24px; background: #0f1419; border-radius: 10px;">
+                            <div style="font-size: 40px; margin-bottom: 10px;">✨</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #d1d5db; margin-bottom: 6px;">전환사채 발행 이력 없음</div>
+                            <div style="font-size: 13px; color: #6b7280; line-height: 1.6;">
                                 최근 3년간 전환사채 발행이 없습니다.<br>
                                 재무 자신감의 신호일 수 있습니다.
                             </div>
                         </div>
                     {% elif result.cbs %}
                         {% for cb in result.cbs %}
-                            <div class="cb-item">
+                            <div style="padding: 10px 0; border-bottom: 1px solid #374151;">
                                 <div>
                                     [{{ cb.date }}] 발행액 {{ cb.amount }}원
-                                    {% if cb.warn %}<span class="cb-warn">🚨 운영자금 포함</span>{% endif %}
+                                    {% if cb.warn %}<span style="background: #7f1d1d; color: #fecaca; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">🚨 운영자금 포함</span>{% endif %}
                                 </div>
                                 <div style="color: #9ca3af; font-size: 13px; margin-top: 4px;">
                                     시설자금 {{ cb.facil }}원 / 운영자금 {{ cb.oprt }}원
@@ -2547,35 +1350,38 @@
                     {% endif %}
                 </div>
 
-                <div class="card disclaimer-card">
-                    <h2>📌 데이터 출처 및 면책 조항</h2>
-                    <div class="disclaimer-section">
-                        <div class="disclaimer-label">데이터 출처</div>
-                        <div class="disclaimer-text">
-                            • 공시 데이터: 금융감독원 <strong>DART 전자공시시스템</strong> (Open API)<br>
-                            • 실시간 주가·시가총액: <strong>네이버 금융</strong> (약 15분 지연)<br>
+                {# ===== 📌 데이터 출처 및 면책 조항 카드 ===== #}
+                <div class="card" style="background: #161b22; border: 1px solid #1f2937;">
+                    <h2 style="color: #9ca3af !important; font-size: 16px !important;">📌 데이터 출처 및 면책 조항</h2>
+                    
+                    <div style="margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #1f2937;">
+                        <div style="font-size: 12px; color: #93c5fd; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.3px;">데이터 출처</div>
+                        <div style="font-size: 12.5px; color: #9ca3af; line-height: 1.7;">
+                            • 공시 데이터: 금융감독원 <strong style="color: #d1d5db;">DART 전자공시시스템</strong> (Open API)<br>
+                            • 실시간 주가·시가총액: <strong style="color: #d1d5db;">네이버 금융</strong> (약 15분 지연)<br>
                             • 배당·임원·재무 데이터: DART 사업보고서 기준
                         </div>
                     </div>
-                    <div class="disclaimer-section">
-                        <div class="disclaimer-label">분석 방식의 한계</div>
-                        <div class="disclaimer-text">
-                            본 도구는 공시 제목과 일부 본문 키워드를 기반으로 한 <strong>자동 룰 베이스 분석</strong>입니다.
+                    
+                    <div style="margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #1f2937;">
+                        <div style="font-size: 12px; color: #93c5fd; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.3px;">분석 방식의 한계</div>
+                        <div style="font-size: 12.5px; color: #9ca3af; line-height: 1.7;">
+                            본 도구는 공시 제목과 일부 본문 키워드를 기반으로 한 <strong style="color: #d1d5db;">자동 룰 베이스 분석</strong>입니다.
                             맥락에 따라 호재/악재 판단이 달라질 수 있으며, 모든 공시의 의미를 정확히 반영하지 못할 수 있습니다.
-                            특히 신규 상장 기업, 비상장 모회사, 소형주는 데이터가 부족하거나 누락될 수 있습니다.
                         </div>
                     </div>
-                    <div class="disclaimer-section">
-                        <div class="disclaimer-label">투자 책임</div>
-                        <div class="disclaimer-text">
-                            본 서비스는 <strong>투자 정보 제공을 목적으로 한 참고 자료</strong>이며,
+                    
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-size: 12px; color: #93c5fd; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.3px;">투자 책임</div>
+                        <div style="font-size: 12.5px; color: #9ca3af; line-height: 1.7;">
+                            본 서비스는 <strong style="color: #d1d5db;">투자 정보 제공을 목적으로 한 참고 자료</strong>이며,
                             특정 종목의 매수·매도 권유나 투자 자문이 아닙니다.
-                            모든 투자 판단과 그에 따른 손익은 <strong>투자자 본인에게 귀속</strong>되며,
-                            DART X-RAY는 본 자료를 활용한 투자 결과에 대해 어떠한 책임도 지지 않습니다.
+                            모든 투자 판단과 그에 따른 손익은 <strong style="color: #d1d5db;">투자자 본인에게 귀속</strong>됩니다.
                         </div>
                     </div>
-                    <div class="disclaimer-footer">
-                        ※ 정확한 정보는 반드시 <a href="https://dart.fss.or.kr" target="_blank" rel="noopener" class="disclaimer-link">DART 전자공시시스템 원문</a>을 확인하시기 바랍니다.
+                    
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #1f2937; font-size: 11.5px; color: #6b7280; text-align: center; line-height: 1.6;">
+                        ※ 정확한 정보는 반드시 <a href="https://dart.fss.or.kr" target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: none;">DART 전자공시시스템 원문</a>을 확인하시기 바랍니다.
                     </div>
                 </div>
 
@@ -2584,7 +1390,277 @@
     </div>
 
     <script>
-        // ===== 메인 페이지 공유 함수 =====
+        // ===== 분석 카드 저장 (개별 종목) =====
+        async function saveAnalysisCard() {
+            {% if result and result.conclusion %}
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ 생성 중...';
+            btn.disabled = true;
+            
+            try {
+                // 짤 전용 카드 HTML 생성
+                const container = document.getElementById('saveCardContainer');
+                container.innerHTML = buildAnalysisSaveCard();
+                
+                // 이미지 변환
+                const canvas = await html2canvas(container.firstElementChild, {
+                    backgroundColor: '#0f1419',
+                    scale: 2,
+                    logging: false,
+                });
+                
+                // 다운로드
+                const link = document.createElement('a');
+                link.download = `DART_X-RAY_{{ result.company }}_{{ result.conclusion.score_fmt }}점.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                btn.textContent = '✓ 저장 완료!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            } catch (e) {
+                console.error(e);
+                alert('카드 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+            {% endif %}
+        }
+        
+        function buildAnalysisSaveCard() {
+            {% if result and result.conclusion %}
+            const toneColor = '{{ result.conclusion.tone }}' === 'good' ? '#4ade80' : 
+                            '{{ result.conclusion.tone }}' === 'bad' ? '#f87171' : '#60a5fa';
+            const toneBg = '{{ result.conclusion.tone }}' === 'good' ? '#14532d' :
+                          '{{ result.conclusion.tone }}' === 'bad' ? '#7f1d1d' : '#1e3a5f';
+            
+            const today = new Date();
+            const dateStr = today.getFullYear() + '.' + (today.getMonth()+1) + '.' + today.getDate();
+            
+            return `
+                <div style="width: 720px; background: #0f1419; padding: 40px; font-family: -apple-system, 'Noto Sans KR', sans-serif; color: #e6e6e6;">
+                    <div style="text-align: center; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid #1f2937;">
+                        <div style="font-size: 32px; font-weight: 800; background: linear-gradient(90deg, #60a5fa, #f87171); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px;">🩻 DART X-RAY</div>
+                        <div style="font-size: 13px; color: #9ca3af;">공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 28px;">
+                        <div style="font-size: 32px; font-weight: 800; color: #e6e6e6; margin-bottom: 8px;">{{ result.company }}</div>
+                        <div style="font-size: 14px; color: #9ca3af;">
+                            {% if result.stock %}{{ result.stock.market }} · {% endif %}{{ result.stock_code }}{% if result.stock and result.stock.market_cap_fmt != '-' %} · 시총 {{ result.stock.market_cap_fmt }}{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, #0f1419 0%, ${toneBg} 200%); border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px; border-left: 4px solid ${toneColor};">
+                        <div style="font-size: 64px; line-height: 1; margin-bottom: 12px;">{{ result.conclusion.emoji }}</div>
+                        <div style="font-size: 48px; font-weight: 800; color: ${toneColor}; line-height: 1; margin-bottom: 8px;">{{ result.conclusion.score_fmt }}점</div>
+                        <div style="font-size: 18px; font-weight: 700; color: ${toneColor};">{{ result.conclusion.label }}</div>
+                    </div>
+                    
+                    <div style="background: #1a1f2e; border-radius: 12px; padding: 22px; margin-bottom: 16px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #fbbf24; margin-bottom: 10px;">📋 한 줄 요약</div>
+                        <div style="font-size: 16px; font-weight: 600; color: #e6e6e6; line-height: 1.6;">{{ result.conclusion.headline }}</div>
+                    </div>
+                    
+                    {% if result.conclusion.good_signals %}
+                    <div style="background: #1a1f2e; border-radius: 12px; padding: 20px; margin-bottom: 12px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #86efac; margin-bottom: 10px;">✅ 좋은 신호</div>
+                        {% for sig in result.conclusion.good_signals %}
+                        <div style="font-size: 13px; color: #d1d5db; line-height: 1.6; padding-left: 14px; position: relative; margin-bottom: 5px;">
+                            <span style="position: absolute; left: 0; color: #4ade80;">•</span>{{ sig }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if result.conclusion.warning_signals %}
+                    <div style="background: #1a1f2e; border-radius: 12px; padding: 20px; margin-bottom: 12px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #fca5a5; margin-bottom: 10px;">⚠️ 주의할 점</div>
+                        {% for sig in result.conclusion.warning_signals %}
+                        <div style="font-size: 13px; color: #d1d5db; line-height: 1.6; padding-left: 14px; position: relative; margin-bottom: 5px;">
+                            <span style="position: absolute; left: 0; color: #f87171;">•</span>{{ sig }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if result.conclusion.context_info %}
+                    <div style="background: #1a1f2e; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 10px;">📊 추가 정보</div>
+                        {% for info in result.conclusion.context_info %}
+                        <div style="font-size: 13px; color: #d1d5db; line-height: 1.6; padding-left: 14px; position: relative; margin-bottom: 5px;">
+                            <span style="position: absolute; left: 0; color: #60a5fa;">•</span>{{ info }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div style="padding: 14px 18px; background: rgba(251, 191, 36, 0.08); border-left: 3px solid #fbbf24; border-radius: 8px; margin-bottom: 24px; font-size: 11px; color: #fcd34d; line-height: 1.5;">
+                        ⚠️ 본 분석은 룰베이스 자동 분석이며 투자 권유가 아닙니다.
+                    </div>
+                    
+                    <div style="text-align: center; padding-top: 20px; border-top: 1px solid #1f2937;">
+                        <div style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">dart-xray.up.railway.app</div>
+                        <div style="font-size: 11px; color: #6b7280;">${dateStr} · 더 많은 분석은 사이트에서 확인</div>
+                    </div>
+                </div>
+            `;
+            {% else %}
+            return '';
+            {% endif %}
+        }
+        
+        // ===== 메인 페이지 카드 저장 =====
+        async function saveHomeCard() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ 생성 중...';
+            btn.disabled = true;
+            
+            try {
+                const container = document.getElementById('saveCardContainer');
+                container.innerHTML = buildHomeSaveCard();
+                
+                const canvas = await html2canvas(container.firstElementChild, {
+                    backgroundColor: '#0f1419',
+                    scale: 2,
+                    logging: false,
+                });
+                
+                const today = new Date();
+                const dateStr = today.getFullYear() + '_' + (today.getMonth()+1) + '_' + today.getDate();
+                
+                const link = document.createElement('a');
+                link.download = `DART_X-RAY_오늘의공시_${dateStr}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                btn.textContent = '✓ 저장 완료!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            } catch (e) {
+                console.error(e);
+                alert('카드 저장 중 오류가 발생했습니다.');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        function buildHomeSaveCard() {
+            const today = new Date();
+            const dateStr = today.getFullYear() + '.' + (today.getMonth()+1) + '.' + today.getDate();
+            
+            let goodHtml = '';
+            {% if good_disclosures and good_disclosures|length > 0 %}
+                goodHtml = `
+                    <div style="background: linear-gradient(135deg, #14532d 0%, #052e16 100%); padding: 14px 18px; border-radius: 10px; margin-bottom: 12px; text-align: center; font-size: 15px; font-weight: 800; color: #86efac;">
+                        🔥 떡상 공시 TOP {{ good_disclosures|length }}
+                    </div>
+                    {% for g in good_disclosures %}
+                    <div style="background: #1f2937; padding: 14px 16px; border-radius: 10px; border-left: 3px solid #4ade80; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 14px; font-weight: 800; color: #86efac;">{{ g.score_emoji }} +{{ g.score }}점</span>
+                            <span style="font-size: 11px; color: #6b7280;">{{ g.time_ago }}</span>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 700; color: #e6e6e6; margin-bottom: 4px;">{{ g.corp_name }} <span style="font-size: 11px; color: #6b7280; font-family: monospace;">{{ g.stock_code }}</span></div>
+                        <div style="font-size: 12px; color: #d1d5db;">{{ g.rule_title }}</div>
+                    </div>
+                    {% endfor %}
+                `;
+            {% else %}
+                goodHtml = '<div style="padding: 24px; text-align: center; background: #1a1f2e; border-radius: 10px; color: #6b7280;">☁️ 오늘은 호재 공시가 적은 날이네요</div>';
+            {% endif %}
+            
+            let badHtml = '';
+            {% if risk_disclosures and risk_disclosures|length > 0 %}
+                badHtml = `
+                    <div style="background: linear-gradient(135deg, #7f1d1d 0%, #4c1d1d 100%); padding: 14px 18px; border-radius: 10px; margin-bottom: 12px; text-align: center; font-size: 15px; font-weight: 800; color: #fecaca;">
+                        🚨 도망쳐 공시 TOP {{ risk_disclosures|length }}
+                    </div>
+                    {% for r in risk_disclosures %}
+                    <div style="background: #1f2937; padding: 14px 16px; border-radius: 10px; border-left: 3px solid #f87171; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 14px; font-weight: 800; color: #fca5a5;">{{ r.score_emoji }} {{ r.score }}점</span>
+                            <span style="font-size: 11px; color: #6b7280;">{{ r.time_ago }}</span>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 700; color: #e6e6e6; margin-bottom: 4px;">{{ r.corp_name }} <span style="font-size: 11px; color: #6b7280; font-family: monospace;">{{ r.stock_code }}</span></div>
+                        <div style="font-size: 12px; color: #d1d5db;">{{ r.rule_title }}</div>
+                    </div>
+                    {% endfor %}
+                `;
+            {% else %}
+                badHtml = '<div style="padding: 24px; text-align: center; background: #1a1f2e; border-radius: 10px; color: #6b7280;">🌙 오늘은 위험 공시가 적은 날이네요</div>';
+            {% endif %}
+            
+            return `
+                <div style="width: 720px; background: #0f1419; padding: 40px; font-family: -apple-system, 'Noto Sans KR', sans-serif; color: #e6e6e6;">
+                    <div style="text-align: center; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid #1f2937;">
+                        <div style="font-size: 32px; font-weight: 800; background: linear-gradient(90deg, #60a5fa, #f87171); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px;">🩻 DART X-RAY</div>
+                        <div style="font-size: 13px; color: #9ca3af;">공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진</div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 28px;">
+                        <div style="font-size: 26px; font-weight: 800; color: #e6e6e6; margin-bottom: 4px;">⚔️ 오늘의 공시 대결</div>
+                        <div style="font-size: 13px; color: #9ca3af;">${dateStr} 기준 · 최근 24시간</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 24px;">${goodHtml}</div>
+                    <div style="margin-bottom: 24px;">${badHtml}</div>
+                    
+                    <div style="padding: 12px 16px; background: rgba(251, 191, 36, 0.08); border-left: 3px solid #fbbf24; border-radius: 6px; margin-bottom: 20px; font-size: 11px; color: #fcd34d; line-height: 1.5; text-align: center;">
+                        ⚠️ 룰베이스 자동 분석 · 투자 권유가 아닙니다
+                    </div>
+                    
+                    <div style="text-align: center; padding-top: 18px; border-top: 1px solid #1f2937;">
+                        <div style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">dart-xray.up.railway.app</div>
+                        <div style="font-size: 11px; color: #6b7280;">${dateStr} · 실시간 공시 분석</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ===== 공유 URL 함수 =====
+        function getShareUrl() {
+            return window.location.href.split('?')[0] + '?q=' + encodeURIComponent(
+                document.getElementById('companyInput').value || ''
+            );
+        }
+
+        function initShareUrl() {
+            const urlEl = document.getElementById('shareUrl');
+            if (urlEl) { urlEl.textContent = getShareUrl(); }
+        }
+
+        function copyShareUrl() {
+            const url = getShareUrl();
+            const btn = document.getElementById('copyBtn');
+            const btnText = document.getElementById('copyBtnText');
+            navigator.clipboard.writeText(url).then(() => {
+                btn.classList.add('copied');
+                btnText.textContent = '✓ 복사됨!';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btnText.textContent = '🔗 링크 복사';
+                }, 2000);
+            }).catch(() => alert('복사 실패: ' + url));
+        }
+
+        function shareKakao() {
+            const url = getShareUrl();
+            if (navigator.share) {
+                navigator.share({ title: 'DART X-RAY 분석 결과', url: url }).catch(() => {});
+            } else {
+                copyShareUrl();
+                alert('링크가 복사되었습니다. 카카오톡에 붙여넣으세요!');
+            }
+        }
+
+        // ===== 메인 페이지 공유 =====
         function getHomeShareUrl() {
             return window.location.origin + '/';
         }
@@ -2593,51 +1669,20 @@
             const url = getHomeShareUrl();
             const btn = document.getElementById('homeCopyBtn');
             const btnText = document.getElementById('homeCopyBtnText');
-            
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(url).then(() => {
-                    showHomeCopied(btn, btnText);
-                }).catch(() => {
-                    fallbackCopyHome(url, btn, btnText);
-                });
-            } else {
-                fallbackCopyHome(url, btn, btnText);
-            }
-        }
-        
-        function fallbackCopyHome(text, btn, btnText) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.left = '-9999px';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showHomeCopied(btn, btnText);
-            } catch (e) {
-                alert('복사 실패. URL: ' + text);
-            }
-            document.body.removeChild(textarea);
-        }
-        
-        function showHomeCopied(btn, btnText) {
-            btn.classList.add('copied');
-            btnText.textContent = '✓ 복사됨!';
-            setTimeout(() => {
-                btn.classList.remove('copied');
-                btnText.textContent = '🔗 링크 복사';
-            }, 2000);
+            navigator.clipboard.writeText(url).then(() => {
+                btn.classList.add('copied');
+                btnText.textContent = '✓ 복사됨!';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btnText.textContent = '🔗 링크 복사';
+                }, 2000);
+            }).catch(() => alert('복사 실패: ' + url));
         }
         
         function shareHomeKakao() {
             const url = getHomeShareUrl();
             if (navigator.share) {
-                navigator.share({
-                    title: '🚨 DART X-RAY · 오늘의 위험 공시 TOP 5',
-                    text: '한국 주식 시장의 위험 공시를 한 화면에서 확인하세요',
-                    url: url,
-                }).catch(() => {});
+                navigator.share({ title: '🚨 DART X-RAY · 오늘의 공시', url: url }).catch(() => {});
             } else {
                 copyHomeUrl();
                 alert('링크가 복사되었습니다. 카카오톡에 붙여넣으세요!');
@@ -2647,116 +1692,34 @@
         function shareHomeTwitter() {
             const url = getHomeShareUrl();
             const text = '🚨 오늘의 위험 공시 TOP 5\n\n한국 주식 공시의 이면을 꿰뚫어 보는 DART X-RAY 🩻';
-            const twitterUrl = 'https://twitter.com/intent/tweet?text=' + 
-                encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
-            window.open(twitterUrl, '_blank', 'width=600,height=400');
-        }
-        
-        // ===== 공유 URL 생성 및 복사 =====
-        function getShareUrl() {
-            return window.location.href.split('?')[0] + '?q=' + encodeURIComponent(
-                document.getElementById('companyInput').value || ''
-            );
-        }
-
-        function initShareUrl() {
-            const urlEl = document.getElementById('shareUrl');
-            if (urlEl) {
-                urlEl.textContent = getShareUrl();
-            }
-        }
-
-        function copyShareUrl() {
-            const url = getShareUrl();
-            const btn = document.getElementById('copyBtn');
-            const btnText = document.getElementById('copyBtnText');
-
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(url).then(() => {
-                    showCopied(btn, btnText);
-                }).catch(() => {
-                    fallbackCopy(url, btn, btnText);
-                });
-            } else {
-                fallbackCopy(url, btn, btnText);
-            }
-        }
-
-        function fallbackCopy(text, btn, btnText) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.left = '-9999px';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showCopied(btn, btnText);
-            } catch (e) {
-                alert('복사 실패. URL: ' + text);
-            }
-            document.body.removeChild(textarea);
-        }
-
-        function showCopied(btn, btnText) {
-            btn.classList.add('copied');
-            btnText.textContent = '✓ 복사됨!';
-            setTimeout(() => {
-                btn.classList.remove('copied');
-                btnText.textContent = '🔗 링크 복사';
-            }, 2000);
-        }
-
-        function shareKakao() {
-            const url = getShareUrl();
-            if (navigator.share) {
-                navigator.share({
-                    title: 'DART X-RAY 분석 결과',
-                    text: 'DART X-RAY로 분석한 기업 공시 결과',
-                    url: url,
-                }).catch(() => {});
-            } else {
-                copyShareUrl();
-                alert('링크가 복사되었습니다. 카카오톡에 붙여넣으세요!');
-            }
+            window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank', 'width=600,height=400');
         }
 
         document.addEventListener('DOMContentLoaded', initShareUrl);
 
-        // 로딩 오버레이 처리
+        // 로딩 오버레이
         const loadingOverlay = document.getElementById('loadingOverlay');
         const searchForm = document.getElementById('searchForm');
 
-        // 로딩 오버레이 트리거 (검색 폼 + 위험 공시 카드 클릭 둘 다)
         function triggerLoadingOverlay() {
-            loadingOverlay.classList.add('active');
-
+            if (loadingOverlay) loadingOverlay.classList.add('active');
             setTimeout(() => {
-                document.getElementById('step1').classList.add('done');
-                document.getElementById('step2').classList.add('active');
+                document.getElementById('step1')?.classList.add('done');
+                document.getElementById('step2')?.classList.add('active');
             }, 1000);
             setTimeout(() => {
-                document.getElementById('step2').classList.remove('active');
-                document.getElementById('step2').classList.add('done');
-                document.getElementById('step3').classList.add('active');
+                document.getElementById('step2')?.classList.remove('active');
+                document.getElementById('step2')?.classList.add('done');
+                document.getElementById('step3')?.classList.add('active');
             }, 3000);
-            setTimeout(() => {
-                document.getElementById('step3').classList.remove('active');
-                document.getElementById('step3').classList.add('done');
-                document.getElementById('step4').classList.add('active');
-            }, 5000);
         }
 
-        // 검색 폼 제출 시
         searchForm.addEventListener('submit', triggerLoadingOverlay);
-
-        // 위험 공시 카드 클릭 시 (메인 페이지에 있을 때만)
-        document.querySelectorAll('.risk-card').forEach(card => {
+        document.querySelectorAll('.battle-card').forEach(card => {
             card.addEventListener('click', triggerLoadingOverlay);
         });
 
-        // 검색창 자동완성 클릭 시에도 (form.submit() 직접 호출하면 submit 이벤트가 안 뜨므로)
-        // → 이미 form.submit() 호출되니까 별도 처리 불필요
+        // 검색 자동완성
         const input = document.getElementById('companyInput');
         const dropdown = document.getElementById('suggestions');
         const form = document.getElementById('searchForm');
@@ -2764,17 +1727,12 @@
         let activeIndex = -1;
 
         async function fetchSuggestions(q) {
-            if (!q.trim()) {
-                dropdown.style.display = 'none';
-                return;
-            }
+            if (!q.trim()) { dropdown.style.display = 'none'; return; }
             try {
                 const res = await fetch('/search?q=' + encodeURIComponent(q));
                 const data = await res.json();
                 renderDropdown(data);
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function renderDropdown(items) {
@@ -2791,7 +1749,6 @@
             `).join('');
             dropdown.style.display = 'block';
             activeIndex = -1;
-
             dropdown.querySelectorAll('.suggestion').forEach(el => {
                 el.addEventListener('mousedown', (e) => {
                     e.preventDefault();
@@ -2810,23 +1767,10 @@
         input.addEventListener('keydown', (e) => {
             const items = dropdown.querySelectorAll('.suggestion');
             if (!items.length) return;
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                activeIndex = Math.min(activeIndex + 1, items.length - 1);
-                updateActive(items);
-            } else if (e.key === 'Enter' && activeIndex >= 0) {
-                e.preventDefault();
-                input.value = items[activeIndex].dataset.name;
-                dropdown.style.display = 'none';
-                form.submit();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                activeIndex = Math.max(activeIndex - 1, -1);
-                updateActive(items);
-            } else if (e.key === 'Escape') {
-                dropdown.style.display = 'none';
-            }
+            if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); updateActive(items); }
+            else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); input.value = items[activeIndex].dataset.name; dropdown.style.display = 'none'; form.submit(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, -1); updateActive(items); }
+            else if (e.key === 'Escape') { dropdown.style.display = 'none'; }
         });
 
         function updateActive(items) {
@@ -2835,9 +1779,7 @@
         }
 
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.search-wrapper')) {
-                dropdown.style.display = 'none';
-            }
+            if (!e.target.closest('.search-wrapper')) dropdown.style.display = 'none';
         });
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
