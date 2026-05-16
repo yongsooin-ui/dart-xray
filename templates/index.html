@@ -564,6 +564,10 @@
             background: #6d28d9;
             color: white;
         }
+        /* 데스크탑: 긴 텍스트, 모바일: 짧은 텍스트 */
+        .btn-text-short { display: none; }
+        .btn-text-full { display: inline; }
+        
         @media (max-width: 600px) {
             .home-share-bar { padding: 12px 14px; gap: 10px; }
             .home-share-label { font-size: 12px; }
@@ -571,15 +575,18 @@
             .home-share-actions { 
                 width: 100%;
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 6px;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                gap: 4px;
             }
             .home-share-btn { 
-                font-size: 12px; 
-                padding: 9px 8px; 
+                font-size: 10px; 
+                padding: 8px 4px; 
                 min-width: 0;
                 width: 100%;
             }
+            /* 모바일에서 짧은 텍스트로 교체 */
+            .btn-text-short { display: inline; }
+            .btn-text-full { display: none; }
         }
 
         /* ===== 호재 vs 악재 대결 구도 ===== */
@@ -731,17 +738,23 @@
         }
 
         .tabs {
-            display: flex; gap: 6px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
             background: #0f1419; padding: 6px;
             border-radius: 12px; margin-bottom: 20px;
             border: 1px solid #1f2937;
         }
         .tab-btn {
-            flex: 1; padding: 12px 14px; font-size: 14px; font-weight: 700;
+            padding: 12px 6px; font-size: 14px; font-weight: 700;
             background: transparent; color: #6b7280;
             border: none; border-radius: 8px; cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .tab-btn:hover { color: #d1d5db; background: rgba(55, 65, 81, 0.3); }
 
@@ -761,11 +774,14 @@
             box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2);
         }
 
-        .tab-count {
-            display: inline-block; margin-left: 6px;
-            padding: 2px 9px; border-radius: 10px;
-            background: rgba(0, 0, 0, 0.4);
-            font-size: 12px; font-weight: 700;
+        @media (max-width: 600px) {
+            .tabs { gap: 4px; padding: 4px; }
+            .tab-btn { font-size: 12px; padding: 10px 4px; }
+            .tab-count { 
+                font-size: 11px; 
+                padding: 1px 6px; 
+                margin-left: 4px;
+            }
         }
         .tab-btn.active .tab-count {
             background: rgba(255, 255, 255, 0.15);
@@ -867,10 +883,11 @@
             </div>
             <div class="home-share-actions">
                 <button type="button" class="home-share-btn home-share-btn-save" onclick="saveHomeCard()">
-                    📸 분석 카드 저장
+                    <span class="btn-text-full">📸 분석 카드 공유</span>
+                    <span class="btn-text-short">📸 공유</span>
                 </button>
                 <button type="button" class="home-share-btn" id="homeCopyBtn" onclick="copyHomeUrl()">
-                    <span id="homeCopyBtnText">🔗 링크 복사</span>
+                    <span id="homeCopyBtnText">🔗 링크</span>
                 </button>
                 <button type="button" class="home-share-btn home-share-btn-kakao" onclick="shareHomeKakao()">
                     💬 카톡
@@ -1126,7 +1143,7 @@
                     </div>
                     <div class="share-actions">
                         <button type="button" class="share-btn share-btn-save" onclick="saveAnalysisCard()">
-                            📸 분석 카드 저장
+                            📸 분석 카드 공유
                         </button>
                         <button type="button" class="share-btn" id="copyBtn" onclick="copyShareUrl()">
                             <span id="copyBtnText">🔗 링크 복사</span>
@@ -1439,7 +1456,8 @@
                         await navigator.share({
                             files: [file],
                             title: 'DART X-RAY 분석',
-                            text: `{{ result.company }} 공시 분석 결과 ({{ result.conclusion.score_fmt }}점, {{ result.conclusion.label }})`,
+                            text: `{{ result.company }} 공시 분석 결과 ({{ result.conclusion.score_fmt }}점, {{ result.conclusion.label }})\n\n🩻 DART X-RAY에서 더 보기:`,
+                            url: window.location.href.split('?')[0] + '?q=' + encodeURIComponent('{{ result.company }}'),
                         });
                         btn.textContent = '✓ 공유 완료!';
                     } catch (shareErr) {
@@ -1594,7 +1612,8 @@
                         await navigator.share({
                             files: [file],
                             title: '🚨 DART X-RAY · 오늘의 공시',
-                            text: '한국 주식 공시의 이면을 꿰뚫어 보는 DART X-RAY 🩻',
+                            text: '한국 주식 공시의 이면을 꿰뚫어 보는 DART X-RAY 🩻\n\n👉',
+                            url: window.location.origin + '/',
                         });
                         btn.textContent = '✓ 공유 완료!';
                     } catch (shareErr) {
