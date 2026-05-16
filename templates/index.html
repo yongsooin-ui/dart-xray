@@ -280,11 +280,19 @@
             .share-bar { padding: 12px 14px; gap: 10px; }
             .share-label { font-size: 12px; }
             .share-url { font-size: 10px; }
-            .share-btn { font-size: 12px; padding: 7px 11px; }
-            .share-actions { width: 100%; }
-            .share-btn { flex: 1; min-width: 90px; }
+            .share-actions { 
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 6px;
+            }
+            .share-btn { 
+                font-size: 12px; 
+                padding: 9px 8px;
+                min-width: 0;
+                width: 100%;
+            }
         }
-
         /* ===== 🎯 결론 카드 (두괄식) ===== */
         .conclusion-card {
             padding: 28px 32px;
@@ -560,8 +568,18 @@
             .home-share-bar { padding: 12px 14px; gap: 10px; }
             .home-share-label { font-size: 12px; }
             .home-share-hint { font-size: 10px; }
-            .home-share-actions { width: 100%; }
-            .home-share-btn { flex: 1; font-size: 11px; padding: 7px 8px; min-width: 70px; }
+            .home-share-actions { 
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .home-share-btn { 
+                font-size: 12px; 
+                padding: 9px 8px; 
+                min-width: 0;
+                width: 100%;
+            }
         }
 
         /* ===== 호재 vs 악재 대결 구도 ===== */
@@ -1410,13 +1428,35 @@
                     logging: false,
                 });
                 
-                // 다운로드
-                const link = document.createElement('a');
-                link.download = `DART_X-RAY_{{ result.company }}_{{ result.conclusion.score_fmt }}점.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                // Canvas → Blob → File 변환
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const fileName = `DART_X-RAY_{{ result.company }}_{{ result.conclusion.score_fmt }}점.png`;
+                const file = new File([blob], fileName, { type: 'image/png' });
                 
-                btn.textContent = '✓ 저장 완료!';
+                // Web Share API 지원 확인 (모바일에서 작동)
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'DART X-RAY 분석',
+                            text: `{{ result.company }} 공시 분석 결과 ({{ result.conclusion.score_fmt }}점, {{ result.conclusion.label }})`,
+                        });
+                        btn.textContent = '✓ 공유 완료!';
+                    } catch (shareErr) {
+                        // 사용자가 공유 취소한 경우 등 → 다운로드로 폴백
+                        if (shareErr.name !== 'AbortError') {
+                            downloadImageFallback(blob, fileName);
+                            btn.textContent = '✓ 저장 완료!';
+                        } else {
+                            btn.textContent = originalText;
+                        }
+                    }
+                } else {
+                    // 데스크탑/지원 안 하는 브라우저 → 다운로드
+                    downloadImageFallback(blob, fileName);
+                    btn.textContent = '✓ 저장 완료!';
+                }
+                
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.disabled = false;
@@ -1428,6 +1468,16 @@
                 btn.disabled = false;
             }
             {% endif %}
+        }
+        
+        // 다운로드 폴백 함수 (Web Share API 미지원 시)
+        function downloadImageFallback(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = url;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
         
         function buildAnalysisSaveCard() {
@@ -1533,12 +1583,33 @@
                 const today = new Date();
                 const dateStr = today.getFullYear() + '_' + (today.getMonth()+1) + '_' + today.getDate();
                 
-                const link = document.createElement('a');
-                link.download = `DART_X-RAY_오늘의공시_${dateStr}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                // Canvas → Blob → File
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const fileName = `DART_X-RAY_오늘의공시_${dateStr}.png`;
+                const file = new File([blob], fileName, { type: 'image/png' });
                 
-                btn.textContent = '✓ 저장 완료!';
+                // Web Share API 시도
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: '🚨 DART X-RAY · 오늘의 공시',
+                            text: '한국 주식 공시의 이면을 꿰뚫어 보는 DART X-RAY 🩻',
+                        });
+                        btn.textContent = '✓ 공유 완료!';
+                    } catch (shareErr) {
+                        if (shareErr.name !== 'AbortError') {
+                            downloadImageFallback(blob, fileName);
+                            btn.textContent = '✓ 저장 완료!';
+                        } else {
+                            btn.textContent = originalText;
+                        }
+                    }
+                } else {
+                    downloadImageFallback(blob, fileName);
+                    btn.textContent = '✓ 저장 완료!';
+                }
+                
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.disabled = false;

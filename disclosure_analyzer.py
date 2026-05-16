@@ -1026,10 +1026,17 @@ def _generate_headline(total_score, score_count, signals_good, signals_bad, char
 def _extract_good_signals(signals_good, dividends, cb_none):
     """좋은 신호 추출 (최대 3개) - 일반 투자자 친화적 메시지."""
     result = []
+    seen_messages = set()  # 중복 메시지 추적
+    performance_added = False  # 실적 메시지 이미 추가했는지
     
     # 1. 호재 공시 TOP 2 (점수 높은 순)
     sorted_good = sorted(signals_good, key=lambda x: -x.get('score', 0))
-    for sig in sorted_good[:2]:
+    for sig in sorted_good[:5]:  # 후보 더 많이 본 후 중복 제외
+        if len(result) >= 2:
+            break
+        
+        rule_title = sig.get('rule_title', '')
+        score = sig.get('score', 0)
         rule_title = sig.get('rule_title', '')
         score = sig.get('score', 0)
         
@@ -1067,7 +1074,15 @@ def _extract_good_signals(signals_good, dividends, cb_none):
             else:
                 interp = "작년과 비슷한 흐름"
             
-            result.append(f"{rule_title}: {metrics} → {interp}")
+            # 실적 메시지는 한 번만 추가
+            if performance_added:
+                continue
+            
+            message = f"{rule_title}: {metrics} → {interp}"
+            if message not in seen_messages:
+                result.append(message)
+                seen_messages.add(message)
+                performance_added = True
             continue
         
         # 시총 대비 자사주 분석 결과 활용
@@ -1081,9 +1096,14 @@ def _extract_good_signals(signals_good, dividends, cb_none):
         # 친근한 룰별 메시지
         friendly_msg = _get_friendly_good_message(rule_title, score)
         if friendly_msg:
-            result.append(friendly_msg)
+            if friendly_msg not in seen_messages:
+                result.append(friendly_msg)
+                seen_messages.add(friendly_msg)
         else:
-            result.append(f"{rule_title} (+{score}점)")
+            fallback_msg = f"{rule_title} (+{score}점)"
+            if fallback_msg not in seen_messages:
+                result.append(fallback_msg)
+                seen_messages.add(fallback_msg)
     
     # 2. 배당 정보 (양호하면 추가)
     if dividends and dividends.get('amount_per_100') and dividends.get('amount_per_100') != '-':
@@ -1122,11 +1142,18 @@ def _get_friendly_good_message(rule_title, score):
 def _extract_warning_signals(signals_bad, cbs):
     """주의할 점 추출 (최대 3개) - 일반 투자자 친화적 메시지."""
     result = []
+    seen_messages = set()  # 중복 추적
+    performance_added = False
     
     # 1. 악재 공시 TOP 3 (점수 낮은 순)
     sorted_bad = sorted(signals_bad, key=lambda x: x.get('score', 0))
     
-    for sig in sorted_bad[:3]:
+    for sig in sorted_bad[:6]:  # 후보 더 많이 본 후 중복 제외
+        if len(result) >= 3:
+            break
+        
+        rule_title = sig.get('rule_title', '')
+        score = sig.get('score', 0)
         rule_title = sig.get('rule_title', '')
         score = sig.get('score', 0)
         
@@ -1164,7 +1191,14 @@ def _extract_warning_signals(signals_bad, cbs):
             else:
                 interp = "약간 부진하지만 큰 위험은 아님"
             
-            result.append(f"{rule_title}: {metrics} → {interp}")
+            if performance_added:
+                continue
+            
+            message = f"{rule_title}: {metrics} → {interp}"
+            if message not in seen_messages:
+                result.append(message)
+                seen_messages.add(message)
+                performance_added = True
             continue
         
         # CB 자금목적 분석 결과 활용
@@ -1186,9 +1220,14 @@ def _extract_warning_signals(signals_bad, cbs):
         # 친근한 룰별 메시지
         friendly_msg = _get_friendly_bad_message(rule_title, score)
         if friendly_msg:
-            result.append(friendly_msg)
+            if friendly_msg not in seen_messages:
+                result.append(friendly_msg)
+                seen_messages.add(friendly_msg)
         else:
-            result.append(f"{rule_title} ({score}점)")
+            fallback_msg = f"{rule_title} ({score}점)"
+            if fallback_msg not in seen_messages:
+                result.append(fallback_msg)
+                seen_messages.add(fallback_msg)
     
     # 2. 위험한 CB 이력 (운영자금 포함된 CB 있으면 경고)
     if cbs and len(result) < 3:
