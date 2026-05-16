@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if result and result.company %}{{ result.company }} 공시 분석 · DART X-RAY{% else %}DART X-RAY · 공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진{% endif %}</title>
+    <!-- ===== Google Analytics 4 ===== -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-58XHP456TF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-58XHP456TF');
+    </script>
     <meta name="description" content="{% if result and result.company %}{{ result.company }}의 최근 30일 공시, 배당, 임원 보수, 전환사채 이력을 한눈에. VC 시각의 자동 분석.{% else %}공시 50개+ 자동 해석. 자금목적·시총 대비 심층 분석. 100주 보유 시 배당 수령액까지. VC 시각의 공시 분석 도구.{% endif %}">
 
     <meta property="og:type" content="website">
@@ -1424,6 +1432,20 @@
         {% endif %}
     </div>
 
+    <!-- ===== 피드백 푸터 ===== -->
+    <div style="max-width: 900px; margin: 40px auto 20px; padding: 20px; text-align: center; border-top: 1px solid #1f2937;">
+        <a href="https://forms.gle/i5mwokd1urW9gsTFA" target="_blank" rel="noopener" 
+           style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; 
+                  background: #1e3a5f; color: #93c5fd; text-decoration: none; 
+                  border-radius: 8px; font-size: 14px; font-weight: 600;
+                  transition: all 0.2s ease;">
+            💬 의견 보내기 · 버그 신고
+        </a>
+        <div style="margin-top: 12px; font-size: 12px; color: #6b7280;">
+            여러분의 의견이 DART X-RAY를 더 좋게 만듭니다 🙏
+        </div>
+    </div>
+
     <script>
         // ===== 분석 카드 저장 (개별 종목) =====
         async function saveAnalysisCard() {
@@ -1571,7 +1593,7 @@
                     </div>
                     
                     <div style="text-align: center; padding-top: 20px; border-top: 1px solid #1f2937;">
-                        <div style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">dart-xray.up.railway.app</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">dartxray.co.kr</div>
                         <div style="font-size: 11px; color: #6b7280;">${dateStr} · 더 많은 분석은 사이트에서 확인</div>
                     </div>
                 </div>
@@ -1707,7 +1729,7 @@
                     </div>
                     
                     <div style="text-align: center; padding-top: 18px; border-top: 1px solid #1f2937;">
-                        <div style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">dart-xray.up.railway.app</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">dartxray.co.kr</div>
                         <div style="font-size: 11px; color: #6b7280;">${dateStr} · 실시간 공시 분석</div>
                     </div>
                 </div>
