@@ -33,6 +33,34 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
+        /* ===== 우측 상단 메뉴 ===== */
+        .top-nav {
+            position: absolute;
+            top: 20px; right: 24px;
+            display: flex; gap: 20px;
+            z-index: 100;
+        }
+        .top-nav a {
+            color: #e5e7eb; text-decoration: none;
+            font-size: 14px; font-weight: 500;
+            padding: 8px 14px; border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .top-nav a:hover {
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.1);
+        }
+        
+        @media (max-width: 600px) {
+            .top-nav {
+                top: 12px; right: 12px;
+                gap: 8px;
+            }
+            .top-nav a {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, 'Noto Sans KR', sans-serif;
@@ -843,6 +871,12 @@
     </style>
 </head>
 <body>
+    <!-- ===== 우측 상단 메뉴 ===== -->
+    <nav class="top-nav">
+        <a href="/about">소개</a>
+        <a href="/faq">FAQ</a>
+        <a href="/scoring">점수 산정</a>
+    </nav>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="loading-spinner">

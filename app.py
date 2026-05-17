@@ -434,6 +434,21 @@ def _run_analysis(query):
     return result
 
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@app.route('/faq')
+def faq():
+    return render_template('faq.html')
+
+
+@app.route('/scoring')
+def scoring():
+    return render_template('scoring.html')
+
+
 @app.route('/')
 def home():
     q = request.args.get('q', '').strip()

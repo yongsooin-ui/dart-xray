@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>점수 산정 방식 · DART X-RAY</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-58XHP456TF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-58XHP456TF');
+    </script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419; color: #e5e7eb;
+            line-height: 1.7;
+        }
+        .nav {
+            background: #1a1f2e; padding: 16px 24px;
+            border-bottom: 1px solid #1f2937;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav-logo {
+            font-size: 18px; font-weight: 800;
+            color: #e5e7eb; text-decoration: none;
+            background: linear-gradient(135deg, #a78bfa, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a {
+            color: #e5e7eb; text-decoration: none;
+            font-size: 14px; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #a78bfa; }
+        .container {
+            max-width: 800px; margin: 40px auto; padding: 0 24px;
+        }
+        h1 {
+            font-size: 32px; font-weight: 800; margin-bottom: 16px;
+            background: linear-gradient(135deg, #a78bfa, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            color: #9ca3af; font-size: 16px; margin-bottom: 40px;
+        }
+        h2 {
+            font-size: 22px; font-weight: 700; margin-top: 40px; margin-bottom: 16px;
+            color: #f3f4f6;
+        }
+        h3 {
+            font-size: 18px; font-weight: 600; margin-top: 24px; margin-bottom: 12px;
+            color: #d1d5db;
+        }
+        p { margin-bottom: 16px; color: #d1d5db; }
+        .score-table {
+            background: #1a1f2e; border-radius: 12px; 
+            padding: 20px; margin: 20px 0;
+            border: 1px solid #1f2937;
+        }
+        .score-row {
+            display: flex; padding: 12px 0;
+            border-bottom: 1px solid #1f2937;
+            gap: 16px; align-items: center;
+        }
+        .score-row:last-child { border-bottom: none; }
+        .score-badge {
+            min-width: 70px; padding: 6px 12px;
+            border-radius: 8px; font-weight: 700;
+            font-size: 14px; text-align: center;
+        }
+        .badge-good { background: #052e16; color: #4ade80; }
+        .badge-bad { background: #450a0a; color: #f87171; }
+        .badge-neutral { background: #1e293b; color: #94a3b8; }
+        .rule-card {
+            background: #1a1f2e; padding: 16px 20px;
+            border-radius: 10px; margin-bottom: 12px;
+            border-left: 3px solid #60a5fa;
+        }
+        .rule-title { 
+            font-weight: 700; color: #f3f4f6; 
+            margin-bottom: 4px;
+        }
+        .rule-score { 
+            display: inline-block; padding: 2px 10px;
+            border-radius: 6px; font-size: 13px; font-weight: 700;
+            margin-left: 8px;
+        }
+        .footer {
+            margin-top: 60px; padding: 24px; text-align: center;
+            border-top: 1px solid #1f2937; color: #6b7280; font-size: 13px;
+        }
+        .back-link {
+            display: inline-block; margin-top: 24px; padding: 10px 20px;
+            background: #1e3a5f; color: #93c5fd;
+            border-radius: 8px; text-decoration: none;
+            font-size: 14px; font-weight: 600;
+        }
+        .highlight {
+            background: #1e3a5f; border-left: 3px solid #60a5fa;
+            padding: 16px 20px; border-radius: 8px;
+            margin: 24px 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/" class="nav-logo">🩻 DART X-RAY</a>
+        <div class="nav-links">
+            <a href="/about">소개</a>
+            <a href="/faq">FAQ</a>
+            <a href="/scoring">점수 산정</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>점수 산정 방식</h1>
+        <p class="subtitle">DART X-RAY는 어떻게 점수를 매기는가</p>
+        
+        <h2>📊 점수 스케일</h2>
+        <p>각 공시는 -10점(최악재)부터 +10점(최호재) 사이의 점수를 받습니다.</p>
+        
+        <div class="score-table">
+            <div class="score-row">
+                <span class="score-badge badge-good">+7 ~ +10</span>
+                <span>강한 호재 — 자사주 소각, 대규모 흑자전환 등</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-good">+4 ~ +6</span>
+                <span>호재 — 자사주 취득, 무상증자, 대규모 수주</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-good">+1 ~ +3</span>
+                <span>약한 호재 — 배당 결정, 액면분할</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-neutral">0</span>
+                <span>중립 — 정기보고서, 일반 공시</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-bad">-1 ~ -3</span>
+                <span>약한 악재 — CB/BW 발행, 인적분할</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-bad">-4 ~ -6</span>
+                <span>악재 — 유상증자, 자사주 처분, 물적분할</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-bad">-7 ~ -10</span>
+                <span>강한 악재 — 횡령·배임, 감자, 거래정지, 회생/파산</span>
+            </div>
+        </div>
+        
+        <h2>🔬 분석 항목</h2>
+        
+        <h3>1. 공시 제목 키워드 분석</h3>
+        <p>
+            공시 제목의 키워드를 자체 룰베이스로 매칭합니다. 
+            현재 50개 이상의 키워드 룰을 운영하고 있습니다.
+        </p>
+        
+        <div class="rule-card">
+            <div class="rule-title">자기주식소각결정 <span class="rule-score badge-good">+9점</span></div>
+            <div style="color: #9ca3af; font-size: 14px;">유통 주식 영구 감소 → 가장 강력한 주주환원</div>
+        </div>
+        
+        <div class="rule-card">
+            <div class="rule-title">유상증자결정 <span class="rule-score badge-bad">-5점</span></div>
+            <div style="color: #9ca3af; font-size: 14px;">신주 발행 → 기존 주주 지분 희석</div>
+        </div>
+        
+        <div class="rule-card">
+            <div class="rule-title">횡령·배임 혐의 발생 <span class="rule-score badge-bad">-10점</span></div>
+            <div style="color: #9ca3af; font-size: 14px;">거래정지·상장폐지 위험 매우 큼</div>
+        </div>
+        
+        <h3>2. 실적 공시 심층 분석</h3>
+        <p>
+            실적 공시(분기/반기/사업보고서)는 본문의 매출·영업이익을 직접 분석합니다.
+        </p>
+        <div class="score-table">
+            <div class="score-row">
+                <span class="score-badge badge-good">+5점</span>
+                <span>매출/영업이익 50%+ 급증, 흑자전환</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-good">+2 ~ +3</span>
+                <span>매출/영업이익 5~50% 증가</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-neutral">0</span>
+                <span>매출/영업이익 ±5% 보합</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-bad">-2 ~ -6</span>
+                <span>매출/영업이익 5~50% 감소</span>
+            </div>
+            <div class="score-row">
+                <span class="score-badge badge-bad">-8점</span>
+                <span>50%+ 급감, 적자전환</span>
+            </div>
+        </div>
+        
+        <h3>3. 전환사채(CB) 자금 목적 분석</h3>
+        <p>
+            CB가 발행되면 자금 사용 목적을 분석해 점수를 추가 조정합니다.
+        </p>
+        <ul style="margin-left: 20px; color: #d1d5db;">
+            <li style="margin-bottom: 8px;"><strong>운영자금 70%+</strong>: -5점 추가 (재무 위기 신호)</li>
+            <li style="margin-bottom: 8px;"><strong>채무상환 50%+</strong>: -3점 추가 (빚 돌려막기)</li>
+            <li style="margin-bottom: 8px;"><strong>시설투자 70%+</strong>: +2점 추가 (성장 투자)</li>
+            <li style="margin-bottom: 8px;"><strong>희석률 20%+</strong>: -3점 추가 (지분 희석)</li>
+        </ul>
+        
+        <h3>4. 시가총액 대비 자사주 규모</h3>
+        <p>
+            자사주 취득·처분·소각은 시가총액 대비 비율로 점수를 조정합니다.
+        </p>
+        <ul style="margin-left: 20px; color: #d1d5db;">
+            <li style="margin-bottom: 8px;"><strong>시총 대비 0.1% 미만</strong>: 임직원 보상 수준 (무의미)</li>
+            <li style="margin-bottom: 8px;"><strong>0.5~2%</strong>: 의미있는 규모</li>
+            <li style="margin-bottom: 8px;"><strong>5%+</strong>: 대형 (강력한 신호)</li>
+        </ul>
+        
+        <h2>🎯 종합 점수 산정</h2>
+        <p>
+            최근 30일 모든 공시의 점수를 가중 평균합니다.
+        </p>
+        <ul style="margin-left: 20px; color: #d1d5db;">
+            <li style="margin-bottom: 8px;">최신 공시일수록 가중치 높음 (0.9^i 감쇠)</li>
+            <li style="margin-bottom: 8px;">악재는 호재보다 2배 가중 (손실 회피 선호)</li>
+            <li style="margin-bottom: 8px;">호재/악재가 3건 이상이면 임팩트 보너스</li>
+            <li style="margin-bottom: 8px;">중립 공시(0점)는 평균 산출에서 제외</li>
+        </ul>
+        
+        <div class="highlight">
+            <strong>💡 왜 이렇게 복잡한가요?</strong><br>
+            단순히 "공시 1건 = 1점" 으로 계산하면 진짜 중요한 신호가 묻힙니다. 
+            DART X-RAY는 <strong>최신성</strong>, <strong>임팩트</strong>, <strong>맥락</strong>까지 
+            모두 반영해 사용자가 5초 안에 핵심을 파악할 수 있게 합니다.
+        </div>
+        
+        <h2>⚠️ 한계와 주의사항</h2>
+        <p>
+            DART X-RAY는 룰베이스 자동 분석이므로:
+        </p>
+        <ul style="margin-left: 20px; color: #d1d5db;">
+            <li style="margin-bottom: 8px;">새로운 유형의 공시는 미처 반영하지 못할 수 있습니다</li>
+            <li style="margin-bottom: 8px;">시장 상황, 산업 특성, 회사 규모 등 정성적 요소는 제한적입니다</li>
+            <li style="margin-bottom: 8px;">같은 공시도 회사·시점에 따라 영향이 다를 수 있습니다</li>
+            <li style="margin-bottom: 8px;">반드시 DART 원문을 함께 확인하시기 바랍니다</li>
+        </ul>
+        
+        <a href="/" class="back-link">← 메인으로 돌아가기</a>
+        
+        <div class="footer">
+            🩻 DART X-RAY · 공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진
+        </div>
+    </div>
+</body>
+</html>

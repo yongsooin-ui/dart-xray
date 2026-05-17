@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ · DART X-RAY</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-58XHP456TF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-58XHP456TF');
+    </script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419; color: #e5e7eb;
+            line-height: 1.7;
+        }
+        .nav {
+            background: #1a1f2e; padding: 16px 24px;
+            border-bottom: 1px solid #1f2937;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav-logo {
+            font-size: 18px; font-weight: 800;
+            color: #e5e7eb; text-decoration: none;
+            background: linear-gradient(135deg, #a78bfa, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a {
+            color: #e5e7eb; text-decoration: none;
+            font-size: 14px; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #a78bfa; }
+        .container {
+            max-width: 800px; margin: 40px auto; padding: 0 24px;
+        }
+        h1 {
+            font-size: 32px; font-weight: 800; margin-bottom: 16px;
+            background: linear-gradient(135deg, #a78bfa, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            color: #9ca3af; font-size: 16px; margin-bottom: 40px;
+        }
+        .faq-item {
+            background: #1a1f2e; padding: 20px 24px;
+            border-radius: 12px; margin-bottom: 16px;
+            border: 1px solid #1f2937;
+        }
+        .faq-q {
+            font-size: 17px; font-weight: 700; 
+            color: #a78bfa; margin-bottom: 12px;
+        }
+        .faq-a { color: #d1d5db; }
+        .faq-a strong { color: #f3f4f6; }
+        .footer {
+            margin-top: 60px; padding: 24px; text-align: center;
+            border-top: 1px solid #1f2937; color: #6b7280; font-size: 13px;
+        }
+        .back-link {
+            display: inline-block; margin-top: 24px; padding: 10px 20px;
+            background: #1e3a5f; color: #93c5fd;
+            border-radius: 8px; text-decoration: none;
+            font-size: 14px; font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/" class="nav-logo">🩻 DART X-RAY</a>
+        <div class="nav-links">
+            <a href="/about">소개</a>
+            <a href="/faq">FAQ</a>
+            <a href="/scoring">점수 산정</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>자주 묻는 질문</h1>
+        <p class="subtitle">DART X-RAY 사용 전 알아두면 좋은 내용</p>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q1. DART X-RAY는 어떤 서비스인가요?</div>
+            <div class="faq-a">
+                금융감독원 전자공시시스템(DART)에 올라오는 공시를 자동으로 해석해, 
+                <strong>호재·악재 점수</strong>를 매기고 일반 투자자도 5초 안에 이해할 수 있게 요약해주는 서비스입니다. 
+                실적 공시는 매출·영업이익까지 자동 분석합니다.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q2. 투자 권유인가요?</div>
+            <div class="faq-a">
+                <strong>아닙니다.</strong> DART X-RAY는 룰베이스 자동 분석이며, 
+                정보 제공 목적입니다. 분석 결과를 참고하시되, 
+                <strong>최종 투자 판단과 책임은 반드시 본인에게 있습니다.</strong>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q3. 점수는 어떻게 매겨지나요?</div>
+            <div class="faq-a">
+                공시 제목의 키워드, 본문의 자금 목적, 시가총액 대비 규모, 
+                실적 숫자 등을 종합해 -10점(최악재) ~ +10점(최호재) 사이로 점수를 부여합니다. 
+                자세한 산정 방식은 <a href="/scoring" style="color: #a78bfa;">점수 산정 페이지</a>에서 확인하세요.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q4. 데이터는 얼마나 정확한가요?</div>
+            <div class="faq-a">
+                모든 데이터는 <strong>DART 공식 API</strong>에서 가져오며, 
+                임의로 수정하지 않습니다. 다만 자동 해석 과정에서 모든 맥락을 
+                완벽히 반영하지는 못할 수 있습니다. 중요한 결정 전에는 반드시 
+                <a href="https://dart.fss.or.kr" target="_blank" style="color: #a78bfa;">DART 원문</a>을 직접 확인하세요.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q5. 어떤 종목을 분석할 수 있나요?</div>
+            <div class="faq-a">
+                <strong>한국거래소에 상장된 모든 종목</strong> (코스피, 코스닥, 코넥스)을 분석할 수 있습니다. 
+                기업명 또는 종목코드(예: 005930)로 검색하세요.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q6. 실적 분석은 어떻게 이뤄지나요?</div>
+            <div class="faq-a">
+                실적 공시(분기/반기/사업보고서)가 나오면 DART 재무제표 API에서 
+                <strong>매출액과 영업이익</strong>을 가져와 전년 동기와 비교합니다. 
+                업종에 따라 매출, 영업수익 등 다양한 항목을 자동 매칭합니다. 
+                적자전환·흑자전환도 감지합니다.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q7. 분석 결과를 친구에게 공유할 수 있나요?</div>
+            <div class="faq-a">
+                네! 분석 페이지에서 <strong>"📸 분석 카드 공유"</strong> 버튼을 누르면 
+                예쁜 이미지가 생성되어 카톡·메시지·인스타 등으로 바로 공유할 수 있습니다. 
+                모바일에서 가장 잘 작동합니다.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q8. 비용은 얼마인가요?</div>
+            <div class="faq-a">
+                <strong>현재 베타 단계로 완전 무료</strong>입니다. 
+                향후 서비스 확장 시 일부 고급 기능은 유료화될 수 있으나, 
+                기본 분석은 계속 무료로 제공할 계획입니다.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q9. 버그를 발견했어요. 어떻게 알리나요?</div>
+            <div class="faq-a">
+                메인 페이지 하단의 <strong>"💬 의견 보내기 · 버그 신고"</strong> 버튼을 통해 
+                알려주세요. 모든 피드백은 빠르게 검토하고 반영합니다.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-q">Q10. 분석이 다른 사이트와 다르게 나옵니다. 왜죠?</div>
+            <div class="faq-a">
+                같은 공시도 분석 기준에 따라 결과가 다를 수 있습니다. 
+                DART X-RAY는 자체 룰베이스를 사용하며, 다른 사이트와 다른 시각을 제공할 수 있습니다. 
+                여러 정보를 종합해 판단하시는 것을 권장합니다.
+            </div>
+        </div>
+        
+        <a href="/" class="back-link">← 메인으로 돌아가기</a>
+        
+        <div class="footer">
+            🩻 DART X-RAY · 공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진
+        </div>
+    </div>
+</body>
+</html>
