@@ -95,6 +95,7 @@ RULES = [
     },
     {
         'keywords': ['불성실공시법인지정', '상장적격성실질심사', '거래정지'],
+        'exclude_keywords': ['해제', '우회상장', '미해당', '요건충족확인'],
         'score': -9, 'category': 'bad',
         'title': '거래정지·상장폐지 위험',
         'explain': '회사의 존속 자체가 흔들리는 신호. 최악의 경우 주식이 휴지조각이 될 수 있어 각별한 주의가 필요합니다.',
@@ -307,6 +308,9 @@ def analyze_disclosure(report_name):
     for rule in RULES:
         for kw in rule['keywords']:
             if kw in report_name:
+                exclude = rule.get('exclude_keywords', [])
+                if any(ex in report_name for ex in exclude):
+                    break
                 return {
                     'category': rule['category'],
                     'score': rule['score'],
