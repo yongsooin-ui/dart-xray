@@ -959,7 +959,7 @@
                     <div class="battle-card-list">
                         {% if good_disclosures and good_disclosures|length > 0 %}
                             {% for g in good_disclosures %}
-                            <a href="/?q={{ g.corp_name|urlencode }}" class="battle-card battle-card-good">
+                            <a href="/?q={{ g.corp_name|urlencode }}" class="battle-card battle-card-good" data-corp-name="{{ g.corp_name }}">
                                 <div class="battle-card-header">
                                     <span class="battle-card-score">{{ g.score_emoji }} +{{ g.score }}점</span>
                                     <span class="battle-card-time">{{ g.time_ago }}</span>
@@ -987,7 +987,7 @@
                     <div class="battle-card-list">
                         {% if risk_disclosures and risk_disclosures|length > 0 %}
                             {% for r in risk_disclosures %}
-                            <a href="/?q={{ r.corp_name|urlencode }}" class="battle-card battle-card-bad">
+                            <a href="/?q={{ r.corp_name|urlencode }}" class="battle-card battle-card-bad" data-corp-name="{{ r.corp_name }}">
                                 <div class="battle-card-header">
                                     <span class="battle-card-score">{{ r.score_emoji }} {{ r.score }}점</span>
                                     <span class="battle-card-time">{{ r.time_ago }}</span>
@@ -1861,9 +1861,22 @@
             }, 3000);
         }
 
-        searchForm.addEventListener('submit', triggerLoadingOverlay);
+        function fireStockClickEvent(stockName, method) {
+            if (typeof gtag === 'function') {
+                gtag('event', 'stock_click', { stock_name: stockName, search_method: method });
+            }
+        }
+
+        searchForm.addEventListener('submit', function() {
+            const q = input.value.trim();
+            if (q) fireStockClickEvent(q, 'direct_search');
+            triggerLoadingOverlay();
+        });
         document.querySelectorAll('.battle-card').forEach(card => {
-            card.addEventListener('click', triggerLoadingOverlay);
+            card.addEventListener('click', function() {
+                fireStockClickEvent(card.dataset.corpName || '', 'battle_card');
+                triggerLoadingOverlay();
+            });
         });
 
         // 검색 자동완성
@@ -1901,6 +1914,7 @@
                     e.preventDefault();
                     input.value = el.dataset.name;
                     dropdown.style.display = 'none';
+                    fireStockClickEvent(el.dataset.name, 'autocomplete_click');
                     form.submit();
                 });
             });
@@ -1915,7 +1929,7 @@
             const items = dropdown.querySelectorAll('.suggestion');
             if (!items.length) return;
             if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); updateActive(items); }
-            else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); input.value = items[activeIndex].dataset.name; dropdown.style.display = 'none'; form.submit(); }
+            else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); const selected = items[activeIndex].dataset.name; input.value = selected; dropdown.style.display = 'none'; fireStockClickEvent(selected, 'autocomplete_keyboard'); form.submit(); }
             else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, -1); updateActive(items); }
             else if (e.key === 'Escape') { dropdown.style.display = 'none'; }
         });
