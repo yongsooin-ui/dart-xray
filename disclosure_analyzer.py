@@ -373,7 +373,7 @@ def _score_emoji(score):
 
 
 # ===== 테스트 =====
-def aggregate_score(signals):
+def aggregate_score(signals, good_ct=None, bad_ct=None, neutral_ct=None):
     """
     공시 리스트를 받아 종합 점수와 해석을 반환합니다.
     임팩트 중심 로직:
@@ -399,18 +399,25 @@ def aggregate_score(signals):
 
     # 호재·악재·일반 분리
     impact_signals = []  # 0점이 아닌 것 (평균 계산용)
-    good_ct = bad_ct = neu_ct = 0
 
-    for i, s in enumerate(sorted_signals):
-        score = s.get('score', 0)
-        if score >= 1:
-            good_ct += 1
-            impact_signals.append((i, score))
-        elif score <= -1:
-            bad_ct += 1
-            impact_signals.append((i, score))
-        else:
-            neu_ct += 1
+    if good_ct is None or bad_ct is None or neutral_ct is None:
+        good_ct = bad_ct = neu_ct = 0
+        for i, s in enumerate(sorted_signals):
+            score = s.get('score', 0)
+            if score >= 1:
+                good_ct += 1
+                impact_signals.append((i, score))
+            elif score <= -1:
+                bad_ct += 1
+                impact_signals.append((i, score))
+            else:
+                neu_ct += 1
+    else:
+        neu_ct = neutral_ct
+        for i, s in enumerate(sorted_signals):
+            score = s.get('score', 0)
+            if score >= 1 or score <= -1:
+                impact_signals.append((i, score))
 
     total_ct = len(sorted_signals)
 

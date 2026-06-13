@@ -377,7 +377,7 @@ def collect_analysis(corp_code, display_name, stock=None):
         cb_none = True
 
     all_signals = signals_good + signals_bad + signals_neutral
-    summary = aggregate_score(all_signals)
+    summary = aggregate_score(all_signals, good_ct=len(signals_good), bad_ct=len(signals_bad), neutral_ct=len(signals_neutral))
 
     return {
         'company': display_name,
