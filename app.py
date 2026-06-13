@@ -449,6 +449,11 @@ def scoring():
     return render_template('scoring.html')
 
 
+@app.route('/ads.txt')
+def ads_txt():
+    return app.send_static_file('ads.txt'), 200, {'Content-Type': 'text/plain'}
+
+
 @app.route('/')
 def home():
     q = request.args.get('q', '').strip()
