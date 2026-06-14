@@ -73,6 +73,33 @@
             border-radius: 8px; text-decoration: none;
             font-size: 14px; font-weight: 600;
         }
+        .scroll-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: #1e3a5f;
+            color: #93c5fd;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: opacity 0.3s, transform 0.2s;
+            z-index: 100;
+        }
+        .scroll-top:hover {
+            transform: translateY(-2px);
+            background: #1e4a7f;
+        }
+        .scroll-top.visible {
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -270,5 +297,17 @@
             © 2026 DART X-RAY · 공시의 이면을 꿰뚫어 보는 한국 주식 분석 엔진
         </div>
     </div>
+    <button class="scroll-top" id="scrollTopBtn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="맨 위로">↑</button>
+
+    <script>
+        const scrollBtn = document.getElementById('scrollTopBtn');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollBtn.classList.add('visible');
+            } else {
+                scrollBtn.classList.remove('visible');
+            }
+        });
+    </script>
 </body>
 </html>
