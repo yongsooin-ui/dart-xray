@@ -100,6 +100,32 @@
         .scroll-top.visible {
             display: flex;
         }
+        .toc-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        .toc-pagination button {
+            background: #1a1f2e;
+            color: #9ca3af;
+            border: 1px solid #1f2937;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toc-pagination button:hover {
+            background: #1e3a5f;
+            color: #93c5fd;
+        }
+        .toc-pagination button.active {
+            background: #1e3a5f;
+            color: #93c5fd;
+            border-color: #1e3a5f;
+        }
     </style>
 </head>
 <body>
@@ -124,7 +150,7 @@
         </div>
 
         <h2>목차</h2>
-        <ul>
+        <ul id="toc-page-1">
             <li><a href="#guide-01" style="color: #a78bfa;">1. 유상증자, 호재일까 악재일까</a></li>
             <li><a href="#guide-02" style="color: #a78bfa;">2. 전환사채(CB), 빚인지 주식인지 헷갈리는 그것</a></li>
             <li><a href="#guide-03" style="color: #a78bfa;">3. 무상증자, 공짜로 주식 준다는 그 말의 진짜 의미</a></li>
@@ -135,10 +161,16 @@
             <li><a href="#guide-08" style="color: #a78bfa;">8. 배당, 통장에 들어오는 그 돈은 얼마나 되는 걸까</a></li>
             <li><a href="#guide-09" style="color: #a78bfa;">9. 액면분할과 액면병합, 주식 개수가 변하는데 가치는 그대로?</a></li>
             <li><a href="#guide-10" style="color: #a78bfa;">10. 횡령·배임, 회사 안에서 일어난 도둑질</a></li>
+        </ul>
+        <ul id="toc-page-2" style="display: none;">
             <li><a href="#guide-11" style="color: #a78bfa;">11. 회생절차 개시, 회사가 살려달라고 손드는 일</a></li>
             <li><a href="#guide-12" style="color: #a78bfa;">12. 분할·합병, 회사가 쪼개지거나 합쳐지는 일</a></li>
             <li><a href="#guide-13" style="color: #a78bfa;">13. 단일판매·공급계약 해지, 호재가 악재로 뒤집히는 순간</a></li>
         </ul>
+        <div class="toc-pagination">
+            <button id="toc-btn-1" class="active" onclick="showTocPage(1)">1</button>
+            <button id="toc-btn-2" onclick="showTocPage(2)">2</button>
+        </div>
 
         <hr style="border: none; border-top: 1px solid #1f2937; margin: 48px 0;">
 
@@ -663,6 +695,13 @@
                 scrollBtn.classList.remove('visible');
             }
         });
+
+        function showTocPage(pageNum) {
+            document.getElementById('toc-page-1').style.display = pageNum === 1 ? 'block' : 'none';
+            document.getElementById('toc-page-2').style.display = pageNum === 2 ? 'block' : 'none';
+            document.getElementById('toc-btn-1').classList.toggle('active', pageNum === 1);
+            document.getElementById('toc-btn-2').classList.toggle('active', pageNum === 2);
+        }
     </script>
 </body>
 </html>
